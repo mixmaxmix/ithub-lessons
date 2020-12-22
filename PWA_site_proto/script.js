@@ -109,6 +109,7 @@ function loadDay(dayCount, groupe) {
             dinnerTimes[0].innerText = `${dinnerStartTime.getHours()}:${dinnerStartTime.getMinutes() / 10 === 0 ? `0${dinnerStartTime.getMinutes()}` : dinnerStartTime.getMinutes()} `;
             dinnerTimes[1].innerText = `${dinnerEndTime.getHours()}:${dinnerEndTime.getMinutes() / 10 === 0 ? `0${dinnerEndTime.getMinutes()}` : dinnerEndTime.getMinutes()} `;
 
+            // и так далее
             dinner.querySelector('.lesson__title').innerText = 'Обед';
 
             dinner.querySelector('.lesson__aud').innerText = 'Приятного аппетита!';
@@ -143,6 +144,7 @@ function loadDay(dayCount, groupe) {
         info.querySelector('.lesson-info__aud').innerText = 'Аудитория: ' + currentLesson.place + ' ' + (currentLesson.aud ? currentLesson.aud : '');
         info.querySelector('.lesson-info__teacher').innerText = 'Преподаватель: ' + currentLesson.teacher;
 
+        // инфо создается на весь экран и при нажатии на него происходит remove
         let infoContent = info.lastChild;
         info.onclick = () => {
             infoContent.style.bottom = '-40vh';
@@ -169,20 +171,23 @@ function loadDay(dayCount, groupe) {
 
         lessonCard.append(line);
     }
-    if(dayBlock.querySelector('.lessons__content').lastChild) 
+    if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем, можно ли что-то удалить вообще
         dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
     
     return dayBlock;    
 }
 
+//функция, которая загружает весь интерфейс расписания
 function loadAll(groupeName){
     let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
-    let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay();
+    let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас 
 
+    // загрузка карточки с парами для сегодняшнего дня
     document.body.firstElementChild.after(loadDay(nowDay, groupeName));
 
     // выделение активного дня
     function setBgAndColor(elem, bgPos = '50%', bgDefaultPos = '0%', color = WHITE) {
+        // тут сначала градиент переезжает в нужную сторону без transition, чтобы потом с нужной стороны выкатиться 
         elem.style.transition = '';
         elem.style.backgroundPosition = bgDefaultPos;
         elem.isHightLight = (bgPos =='50%');
@@ -197,9 +202,11 @@ function loadAll(groupeName){
     for (let i = 0; i < weekDays.length; i++) {
         setBgAndColor(weekDays[i], '0%', '0%', BLACK);
 
+        // выделение сегодняшнего дня в рамку
         if (i == NOW.getDay()-1)
             weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
 
+        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
         weekDays[i].addEventListener('click', function(){
             let selectedDay;
             for(weekDay of weekDays){
@@ -244,11 +251,13 @@ function loadAll(groupeName){
 
     setBgAndColor(weekDays[nowDay - 1]);
 
+    //работа с элементом week-color
     let currentWeerColorElem = document.querySelector('.week-color');
-    currentWeerColorElem.style.color = getCurentWeekColor();
+    currentWeerColorElem.style.color = getCurentWeekColor(); // функция описана выше
     currentWeerColorElem.firstChild.innerText = getCurentWeekColor() == RED ? 'Красная неделя' : 'Синяя неделя';
     currentWeerColorElem.lastChild.style.backgroundColor = getCurentWeekColor();
 
+    // если есть блок с выбором группы, убиваем его, и даем всем элементам под ним быть видимыми
     if(document.querySelector('.groupes')){
         document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '1';});
         document.querySelector('.groupes').remove();  
@@ -257,8 +266,8 @@ function loadAll(groupeName){
 
 // когда документ полностью загрузился
 document.addEventListener('DOMContentLoaded', () => {
+    // если ничего про группы не было сохранено, предлагаем выбрать
     if(!sessionStorage.groupe){
-
         let groupesElement = document.createElement('div');
         groupesElement.className = 'groupes';
         groupesElement.innerHTML = `
@@ -305,56 +314,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 
             }
         }
-    
+        // убираем все элементы и на абсолютной позиции показываем выбор групп
         document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '0';});
         document.querySelector('.groupes').style.opacity = '1';     
         document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.opacity = '1';}); 
     }else
         loadAll(sessionStorage.groupe);
 
-        document.querySelector('#nav_s').onclick = () =>{
-            document.body.querySelectorAll('*').forEach((elem) => {
-                if(!(elem.classList.value.includes('navbar'))){
-                    elem.style.transition = 'none';
-                    elem.style.visibility = 'hidden';
-                }
-            });
-            let settingsCont = document.createElement('div');
-            settingsCont.className = 'settings'
-    
-            settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
-            <div class="settings__content">
-            <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
-                <label class="groupes__form-title" for="form">Введите новую группу</label>
-                <div class="btn-form">
-                    <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
-                    <button class="submit">></button>
-                </div>
-            </form>
-            </div>`;
-            
-            if(!document.body.contains(settingsCont))
-            document.body.append(settingsCont)
-            
-            document.querySelector('.submit').onclick = () => {
-                
-                let groupeIs = false;
-                for(groupeName of groupes){
-                    if(document.forms.groupe.form.value.toUpperCase() == groupeName)
-                    groupeIs = true;
-                }
-                
-                if(groupeIs){
-                    let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
 
-                    sessionStorage.groupe = currentGroupeName;
-                    window.location.reload();
-                }
-                else{
-                    document.querySelector('.form').style.borderColor = 'red';
-                    setTimeout(() => {
-                        document.querySelector('.form').style.borderColor = MAIN_COLOR;
-                    }, 4000)
+        //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
+        document.querySelector('#nav_s').onclick = () =>{
+            if(!document.querySelector('.settings')){
+                document.body.querySelectorAll('*').forEach((elem) => {
+                    if(!(elem.classList.value.includes('navbar'))){
+                        elem.style.transition = 'none';
+                        elem.style.visibility = 'hidden';
+                    }
+                });
+
+                let settingsCont = document.createElement('div');
+                settingsCont.className = 'settings'
+        
+                settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
+                <div class="settings__content">
+                <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
+                    <label class="groupes__form-title" for="form">Введите новую группу</label>
+                    <div class="btn-form">
+                        <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
+                        <button class="submit">></button>
+                    </div>
+                </form>
+                </div>`;
+                document.body.append(settingsCont)
+                
+                document.querySelector('.submit').onclick = () => {
+                    
+                    let groupeIs = false;
+                    for(groupeName of groupes){
+                        if(document.forms.groupe.form.value.toUpperCase() == groupeName)
+                        groupeIs = true;
+                    }
+                    
+                    if(groupeIs){
+                        let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
+    
+                        sessionStorage.groupe = currentGroupeName;
+                        window.location.reload();
+                    }
+                    else{
+                        document.querySelector('.form').style.borderColor = 'red';
+                        setTimeout(() => {
+                            document.querySelector('.form').style.borderColor = MAIN_COLOR;
+                        }, 4000)
+                    }
                 }
             }
         }
