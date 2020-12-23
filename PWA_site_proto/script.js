@@ -146,20 +146,12 @@ function loadDay(dayCount, groupe) {
 
         // инфо создается на весь экран и при нажатии на него происходит remove
         let infoContent = info.lastChild;
-        info.onclick = () => {
-            infoContent.style.bottom = '-40vh';
-            info.style.opacity = 0;
 
-            info.addEventListener('transitionend', () => {
-                info.remove();
-                infoContent.style.bottom = 0;
-                info.style.opacity = 1;
-            })
-        }
         lessonCard.onclick = () => {
             document.body.append(info);
             infoContent.classList.add('lesson-info__active');
             info.classList.add('lesson-info__activeBg');
+            
             
             let infoContentElems = infoContent.querySelectorAll('.lesson-info_txt');
             for(let i = 0; i < infoContentElems.length; i++){
@@ -168,6 +160,21 @@ function loadDay(dayCount, groupe) {
                 infoContentElems[i].addEventListener('animationend', () => {infoContentElems[i].style.marginBottom = '0px'})
             }
         }
+
+        info.onanimationend = () => {
+            info.onclick = () => {
+                infoContent.style.bottom = '-40vh';
+                info.style.opacity = 0; 
+                
+                info.addEventListener('transitionend', () => {
+                    info.remove();
+                    infoContent.style.bottom = 0;
+                    info.style.opacity = 1;
+
+                    info.onclick = null;
+                })
+            }
+        }   
 
         lessonCard.append(line);
     }
