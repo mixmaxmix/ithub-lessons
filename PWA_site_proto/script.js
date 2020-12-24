@@ -182,6 +182,12 @@ function loadDay(dayCount, groupe) {
     if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем, можно ли что-то удалить вообще
         dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
 
+    // обработка свайпа
+    dayBlock.ontouchmove = function(evt){
+        console.log(evt.changedTouches[0].pageX);
+        dayBlock.style.transform = `translateX(${-document.documentElement.clientWidth /2 + evt.changedTouches[0].pageX}px)`;
+    }
+
     dayBlock.dayCount = dayCount;
     return dayBlock;    
 }
@@ -207,17 +213,8 @@ function loadAll(groupeName){
         }, 50);
     }
 
-    // добавление обработчика нажатия на кнопки дней
-    for (let i = 0; i < weekDays.length; i++) {
-        setBgAndColor(weekDays[i], '0%', '0%', BLACK);
-
-        // выделение сегодняшнего дня в рамку
-        if (i == NOW.getDay()-1)
-            weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
-
-        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
-        weekDays[i].addEventListener('click', function(){
-            let selectedDay;
+    function changeDay(nextDay){
+        let selectedDay;
             for(weekDay of weekDays){
                 if(weekDay.isHightLight)
                     selectedDay = weekDay;  
@@ -226,7 +223,7 @@ function loadAll(groupeName){
             weekDays = Array.from(weekDays);
             if(document.querySelectorAll('.lessons').length < 2){
                 if(weekDays.indexOf(selectedDay) != weekDays.indexOf(event.target)){
-                    let newDay = loadDay(i + 1, groupeName);
+                    let newDay = loadDay(nextDay, groupeName);
                     let oldDay = document.querySelector('.lessons');
                     
                     oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
@@ -257,6 +254,19 @@ function loadAll(groupeName){
             }
             
             selectCurrentLesson();
+    }
+
+    // добавление обработчика нажатия на кнопки дней
+    for (let i = 0; i < weekDays.length; i++) {
+        setBgAndColor(weekDays[i], '0%', '0%', BLACK);
+
+        // выделение сегодняшнего дня в рамку
+        if (i == NOW.getDay()-1)
+            weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
+
+        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
+        weekDays[i].addEventListener('click', function(){
+            changeDay(i+1);
         })
     }
 
@@ -404,5 +414,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     selectCurrentLesson();
-    setInterval(selectCurrentLesson, 60*1000)
+    setInterval(selectCurrentLesson, 60*1000);
 })
