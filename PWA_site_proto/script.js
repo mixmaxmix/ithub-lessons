@@ -179,6 +179,7 @@ function loadDay(dayCount, groupe) {
 
         lessonCard.append(line);
     }
+    
     if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем, можно ли что-то удалить вообще
         dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
 
