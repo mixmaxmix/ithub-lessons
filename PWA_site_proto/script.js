@@ -9,12 +9,13 @@ function getRnd(min, max) {
 
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
 const NOW = new Date(Date.now());
+const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
 const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 00), NOW.setHours(20, 40)]; // времена начала пар
 const DURATION = 400;
 
 // цвета
-const BLUE = '#81A2FF';
-const RED = '#F17B7B';
+const BLUE = '#5577D7';
+const RED = '#FF5157';
 const LGREY = '#F4F6F7';
 const BLACK = '#313131';
 const WHITE = '#FFFFFF';
@@ -180,14 +181,15 @@ function loadDay(dayCount, groupe) {
     }
     if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем, можно ли что-то удалить вообще
         dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
-    
+
+    dayBlock.dayCount = dayCount;
     return dayBlock;    
 }
 
 //функция, которая загружает весь интерфейс расписания
 function loadAll(groupeName){
     let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
-    let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас 
+    let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
 
     // загрузка карточки с парами для сегодняшнего дня
     document.body.firstElementChild.after(loadDay(nowDay, groupeName));
@@ -253,6 +255,8 @@ function loadAll(groupeName){
                     oldDay.addEventListener('animationend', () => {oldDay.remove();})
                 }
             }
+            
+            selectCurrentLesson();
         })
     }
 
@@ -269,7 +273,21 @@ function loadAll(groupeName){
         document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '1';});
         document.querySelector('.groupes').remove();  
     }
-}   
+
+}
+
+// выбор теукущей пары, после загрузки документа вызывается каждую минуту, или при переключении дня
+function selectCurrentLesson(){
+    let currentLessonCount;
+    for(let i = 0; i < START_TIMES.length; i++){
+        if(TRUE_NOW.getTime() - START_TIMES[i] <= (90*60*1000) && TRUE_NOW.getTime() - START_TIMES[i] >= 0){
+            currentLessonCount = i+1;
+            break;
+        }
+    }
+    if(document.querySelector(`#l${currentLessonCount}`) && document.querySelector('.lessons').dayCount === NOW.getDay())
+        document.querySelector(`#l${currentLessonCount}`).style.color = getCurentWeekColor();
+}  
 
 // когда документ полностью загрузился
 document.addEventListener('DOMContentLoaded', () => {
@@ -325,63 +343,66 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '0';});
         document.querySelector('.groupes').style.opacity = '1';     
         document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.opacity = '1';}); 
-    }else
+    }else{
         loadAll(sessionStorage.groupe);
+    }
 
+    //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
+    document.querySelector('#nav_s').onclick = () =>{
+        if(!document.querySelector('.settings')){
+            document.body.querySelectorAll('*').forEach((elem) => {
+                if(!(elem.classList.value.includes('navbar'))){
+                    elem.style.transition = 'none';
+                    elem.style.visibility = 'hidden';
+                }
+            });
 
-        //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
-        document.querySelector('#nav_s').onclick = () =>{
-            if(!document.querySelector('.settings')){
-                document.body.querySelectorAll('*').forEach((elem) => {
-                    if(!(elem.classList.value.includes('navbar'))){
-                        elem.style.transition = 'none';
-                        elem.style.visibility = 'hidden';
-                    }
-                });
-
-                let settingsCont = document.createElement('div');
-                settingsCont.className = 'settings'
-        
-                settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
-                <div class="settings__content">
-                <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
-                    <label class="groupes__form-title" for="form">Введите новую группу</label>
-                    <div class="btn-form">
-                        <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
-                        <button class="submit">></button>
-                    </div>
-                </form>
-                </div>`;
-                document.body.append(settingsCont)
-                
-                document.querySelector('.submit').onclick = () => {
-                    
-                    let groupeIs = false;
-                    for(groupeName of groupes){
-                        if(document.forms.groupe.form.value.toUpperCase() == groupeName)
-                        groupeIs = true;
-                    }
-                    
-                    if(groupeIs){
-                        let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
+            let settingsCont = document.createElement('div');
+            settingsCont.className = 'settings'
     
-                        sessionStorage.groupe = currentGroupeName;
-                        window.location.reload();
-                    }
-                    else{
-                        document.querySelector('.form').style.borderColor = 'red';
-                        setTimeout(() => {
-                            document.querySelector('.form').style.borderColor = MAIN_COLOR;
-                        }, 4000)
-                    }
+            settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
+            <div class="settings__content">
+            <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
+                <label class="groupes__form-title" for="form">Введите новую группу</label>
+                <div class="btn-form">
+                    <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
+                    <button class="submit">></button>
+                </div>
+            </form>
+            </div>`;
+            document.body.append(settingsCont)
+            
+            document.querySelector('.submit').onclick = () => {
+                
+                let groupeIs = false;
+                for(groupeName of groupes){
+                    if(document.forms.groupe.form.value.toUpperCase() == groupeName)
+                    groupeIs = true;
+                }
+                
+                if(groupeIs){
+                    let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
+
+                    sessionStorage.groupe = currentGroupeName;
+                    window.location.reload();
+                }
+                else{
+                    document.querySelector('.form').style.borderColor = 'red';
+                    setTimeout(() => {
+                        document.querySelector('.form').style.borderColor = MAIN_COLOR;
+                    }, 4000)
                 }
             }
         }
+    }
 
-        document.querySelector('#nav_l').onclick = () =>{
-            if(document.querySelector('.settings')){
-                document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'visible';});
-                document.querySelector('.settings').remove();
-            }
+    document.querySelector('#nav_l').onclick = () =>{
+        if(document.querySelector('.settings')){
+            document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'visible';});
+            document.querySelector('.settings').remove();
         }
+    }
+
+    selectCurrentLesson();
+    setInterval(selectCurrentLesson, 60*1000)
 })
