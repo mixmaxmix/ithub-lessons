@@ -35,166 +35,218 @@ function getCurentWeekColor(){
     return currentWeerColor;
 }
 
-function loadDay(dayCount, groupe) {
-    let currentDay = week[groupe][DAYS[dayCount]];
-
-    let dayBlock = document.createElement('div');
-    dayBlock.innerHTML = `
-        <h3 class="lessons__title"></h3>
-        <div class="lessons__content"></div>`;
-    dayBlock.className = 'lessons'
-
-    // изменение заголоква lessons__title
-    let dayDesc;
-    let betweenNowAndSelected = NOW.getDay() == 6 ? dayCount + 1 : NOW.getDay() == 0 ? dayCount : dayCount - NOW.getDay();
-
-    dayDesc =
-        betweenNowAndSelected === undefined ? 'Когда-то' :
-        betweenNowAndSelected === -3 || betweenNowAndSelected === -4 ? `${NOW.getDay() - dayCount} дня назад` :
-        betweenNowAndSelected === -2 ? 'Позавчера' :
-        betweenNowAndSelected === -1 ? 'Вчера' :
-        betweenNowAndSelected === 0 ? 'Сегодня' :
-        betweenNowAndSelected === 1 ? 'Завтра' :
-        betweenNowAndSelected === 2 ? 'Послезавтра' :
-        betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
-        `Через ${betweenNowAndSelected} дней`;
-    
-
-    dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>, ${currentDay.length + `${currentDay.length == 0 ? ' пар' : currentDay.length == 1 ? ' пара' : ' пары'}`}`;
-
-    // заполнение расписанием - создание карточек с парами
-    for (let i = 0; i < currentDay.length; i++) {
-        let currentLesson = currentDay[i];
-
-        // определение шаблона карточки
-        let lessonCard = document.createElement('div');
-        lessonCard.className = 'lesson';
-        lessonCard.id = `l${currentLesson.count}`;
-        lessonCard.innerHTML = `
-        <div class="lesson__time-cont"><span class="lesson__time"></span><span class="lesson__time"></span></div>
-        <div class="lesson__content">
-            <h4 class="lesson__title"></h4>
-            <span class="lesson__aud"></span>
-        </div>
-        <div class="lesson__arrow"></div>`;
-
-        // время
-        let times = lessonCard.querySelectorAll('.lesson__time');
-        let startTime = new Date(START_TIMES[currentLesson.count - 1]);
-        let endTime = new Date(+startTime + 90 * 6e4);
-
-        times[0].innerText = `${startTime.getHours()}:${startTime.getMinutes() / 10 === 0 ? `0${startTime.getMinutes()}` : startTime.getMinutes()} `;
-        times[1].innerText = `${endTime.getHours()}:${endTime.getMinutes() / 10 === 0 ? `0${endTime.getMinutes()}` : endTime.getMinutes()} `;
-
-        // происходит простое добавление карточки в расписание
-        dayBlock.querySelector('.lessons__content').append(lessonCard);
-
-        // линия после каждого элемента
-        let line = document.createElement('div');
-        line.className = 'lesson__line';
-        lessonCard.append(line);
-
-        //  создание обеда после второй пары
-        if (currentLesson.count === 2 && currentDay[i + 1]) {
-            let dinner = document.createElement('div');
-            dinner.innerHTML = lessonCard.innerHTML;
-            dinner.className = lessonCard.className;
-            dinner.id = 'dinner';
-            dinner.querySelector('.lesson__arrow').remove(); //удаление стрелки "подробнее"
-
-            // время обеда
-            let dinnerTimes = dinner.querySelectorAll('.lesson__time');
-            let dinnerStartTime = endTime;
-            let dinnerEndTime = new Date(START_TIMES[currentDay[i + 1].count - 1]); // время начала следующей пары
-
-            dinnerTimes[0].innerText = `${dinnerStartTime.getHours()}:${dinnerStartTime.getMinutes() / 10 === 0 ? `0${dinnerStartTime.getMinutes()}` : dinnerStartTime.getMinutes()} `;
-            dinnerTimes[1].innerText = `${dinnerEndTime.getHours()}:${dinnerEndTime.getMinutes() / 10 === 0 ? `0${dinnerEndTime.getMinutes()}` : dinnerEndTime.getMinutes()} `;
-
-            // и так далее
-            dinner.querySelector('.lesson__title').innerText = 'Обед';
-
-            dinner.querySelector('.lesson__aud').innerText = 'Приятного аппетита!';
-
-            dayBlock.querySelector('.lessons__content').append(dinner);
-
-            dinner.append(line)
-
-        }
-
-        // название предмета
-        lessonCard.querySelector('.lesson__title').innerText = currentLesson.title;
-
-        // аудитория
-        lessonCard.querySelector('.lesson__aud').innerText = currentLesson.place === 'ОНЛ' ? currentLesson.place :
-            currentLesson.place === 'Кур' ? `${currentLesson.place} ${currentLesson.aud}` : currentLesson.aud ? currentLesson.aud : currentLesson.place;
-
-        // плашка с дополнительной инфой
-        let info = document.createElement('div');
-        info.className = 'lesson-info';
-        info.id = `info${lessonCard.id}`;
-        info.innerHTML = `
-        <div class="lesson-info__content">
-            <span class="lesson-info__title"></span>
-            <span class="lesson-info__count lesson-info_txt"></span>
-            <span class="lesson-info__aud lesson-info_txt"></span>
-            <span class="lesson-info__teacher lesson-info_txt"></span>
-        </div>`;
-
-        info.querySelector('.lesson-info__title').innerText = currentLesson.title;
-        info.querySelector('.lesson-info__count').innerText = `${currentLesson.count}-${currentLesson.count === 3 ? 'я' : 'ая'} пара `;
-        info.querySelector('.lesson-info__aud').innerText = 'Аудитория: ' + currentLesson.place + ' ' + (currentLesson.aud ? currentLesson.aud : '');
-        info.querySelector('.lesson-info__teacher').innerText = 'Преподаватель: ' + currentLesson.teacher;
-
-        // инфо создается на весь экран и при нажатии на него происходит remove
-        let infoContent = info.lastChild;
-
-        lessonCard.onclick = () => {
-            document.body.append(info);
-            infoContent.classList.add('lesson-info__active');
-            info.classList.add('lesson-info__activeBg');
-            
-            
-            let infoContentElems = infoContent.querySelectorAll('.lesson-info_txt');
-            for(let i = 0; i < infoContentElems.length; i++){
-                infoContentElems[i].style.marginBottom = '20px';
-                infoContentElems[i].classList.add('lesson-info__innerActive');
-                infoContentElems[i].addEventListener('animationend', () => {infoContentElems[i].style.marginBottom = '0px'})
-            }
-        }
-
-        info.onanimationend = () => {
-            info.onclick = () => {
-                infoContent.style.bottom = '-40vh';
-                info.style.opacity = 0; 
-                
-                info.addEventListener('transitionend', () => {
-                    info.remove();
-                    infoContent.style.bottom = 0;
-                    info.style.opacity = 1;
-
-                    info.onclick = null;
-                })
-            }
-        }   
-
-        lessonCard.append(line);
-    }
-    
-    if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем, можно ли что-то удалить вообще
-        dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
-
-    // обработка свайпа
-    dayBlock.ontouchmove = function(evt){
-        console.log(evt.changedTouches[0].pageX);
-        dayBlock.style.transform = `translateX(${-document.documentElement.clientWidth /2 + evt.changedTouches[0].pageX}px)`;
-    }
-
-    dayBlock.dayCount = dayCount;
-    return dayBlock;    
-}
-
 //функция, которая загружает весь интерфейс расписания
 function loadAll(groupeName){
+    function loadDay(dayCount, groupe) {
+        let currentDay = week[groupe][DAYS[dayCount]];
+    
+        let dayBlock = document.createElement('div');
+        dayBlock.innerHTML = `
+            <h3 class="lessons__title"></h3>
+            <div class="lessons__content"></div>`;
+        dayBlock.className = 'lessons'
+    
+        // изменение заголоква lessons__title
+        let dayDesc;
+        let betweenNowAndSelected = NOW.getDay() == 6 ? dayCount + 1 : NOW.getDay() == 0 ? dayCount : dayCount - NOW.getDay();
+    
+        dayDesc =
+            betweenNowAndSelected === undefined ? 'Когда-то' :
+            betweenNowAndSelected === -3 || betweenNowAndSelected === -4 ? `${NOW.getDay() - dayCount} дня назад` :
+            betweenNowAndSelected === -2 ? 'Позавчера' :
+            betweenNowAndSelected === -1 ? 'Вчера' :
+            betweenNowAndSelected === 0 ? 'Сегодня' :
+            betweenNowAndSelected === 1 ? 'Завтра' :
+            betweenNowAndSelected === 2 ? 'Послезавтра' :
+            betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
+            `Через ${betweenNowAndSelected} дней`;
+        
+    
+        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>, ${currentDay.length + `${currentDay.length == 0 ? ' пар' : currentDay.length == 1 ? ' пара' : ' пары'}`}`;
+    
+        // заполнение расписанием - создание карточек с парами
+        for (let i = 0; i < currentDay.length; i++) {
+            let currentLesson = currentDay[i];
+    
+            // определение шаблона карточки
+            let lessonCard = document.createElement('div');
+            lessonCard.className = 'lesson';
+            lessonCard.id = `l${currentLesson.count}`;
+            lessonCard.innerHTML = `
+            <div class="lesson__time-cont"><span class="lesson__time"></span><span class="lesson__time"></span></div>
+            <div class="lesson__content">
+                <h4 class="lesson__title"></h4>
+                <span class="lesson__aud"></span>
+            </div>
+            <div class="lesson__arrow"></div>`;
+    
+            // время
+            let times = lessonCard.querySelectorAll('.lesson__time');
+            let startTime = new Date(START_TIMES[currentLesson.count - 1]);
+            let endTime = new Date(+startTime + 90 * 6e4);
+    
+            times[0].innerText = `${startTime.getHours()}:${startTime.getMinutes() / 10 === 0 ? `0${startTime.getMinutes()}` : startTime.getMinutes()} `;
+            times[1].innerText = `${endTime.getHours()}:${endTime.getMinutes() / 10 === 0 ? `0${endTime.getMinutes()}` : endTime.getMinutes()} `;
+    
+            // происходит простое добавление карточки в расписание
+            dayBlock.querySelector('.lessons__content').append(lessonCard);
+    
+            // линия после каждого элемента
+            let line = document.createElement('div');
+            line.className = 'lesson__line';
+            lessonCard.append(line);
+    
+            //  создание обеда после второй пары
+            if (currentLesson.count === 2 && currentDay[i + 1]) {
+                let dinner = document.createElement('div');
+                dinner.innerHTML = lessonCard.innerHTML;
+                dinner.className = lessonCard.className;
+                dinner.id = 'dinner';
+                dinner.querySelector('.lesson__arrow').remove(); //удаление стрелки "подробнее"
+    
+                // время обеда
+                let dinnerTimes = dinner.querySelectorAll('.lesson__time');
+                let dinnerStartTime = endTime;
+                let dinnerEndTime = new Date(START_TIMES[currentDay[i + 1].count - 1]); // время начала следующей пары
+    
+                dinnerTimes[0].innerText = `${dinnerStartTime.getHours()}:${dinnerStartTime.getMinutes() / 10 === 0 ? `0${dinnerStartTime.getMinutes()}` : dinnerStartTime.getMinutes()} `;
+                dinnerTimes[1].innerText = `${dinnerEndTime.getHours()}:${dinnerEndTime.getMinutes() / 10 === 0 ? `0${dinnerEndTime.getMinutes()}` : dinnerEndTime.getMinutes()} `;
+    
+                // и так далее
+                dinner.querySelector('.lesson__title').innerText = 'Обед';
+    
+                dinner.querySelector('.lesson__aud').innerText = 'Приятного аппетита!';
+    
+                dayBlock.querySelector('.lessons__content').append(dinner);
+    
+                dinner.append(line)
+    
+            }
+    
+            // название предмета
+            lessonCard.querySelector('.lesson__title').innerText = currentLesson.title;
+    
+            // аудитория
+            lessonCard.querySelector('.lesson__aud').innerText = currentLesson.place === 'ОНЛ' ? currentLesson.place :
+                currentLesson.place === 'Кур' ? `${currentLesson.place} ${currentLesson.aud}` : currentLesson.aud ? currentLesson.aud : currentLesson.place;
+    
+            // плашка с дополнительной инфой
+            let info = document.createElement('div');
+            info.className = 'lesson-info';
+            info.id = `info${lessonCard.id}`;
+            info.innerHTML = `
+            <div class="lesson-info__content">
+                <span class="lesson-info__title"></span>
+                <span class="lesson-info__count lesson-info_txt"></span>
+                <span class="lesson-info__aud lesson-info_txt"></span>
+                <span class="lesson-info__teacher lesson-info_txt"></span>
+            </div>`;
+    
+            info.querySelector('.lesson-info__title').innerText = currentLesson.title;
+            info.querySelector('.lesson-info__count').innerText = `${currentLesson.count}-${currentLesson.count === 3 ? 'я' : 'ая'} пара `;
+            info.querySelector('.lesson-info__aud').innerText = 'Аудитория: ' + currentLesson.place + ' ' + (currentLesson.aud ? currentLesson.aud : '');
+            info.querySelector('.lesson-info__teacher').innerText = 'Преподаватель: ' + currentLesson.teacher;
+    
+            // инфо создается на весь экран и при нажатии на него происходит remove
+            let infoContent = info.lastChild;
+    
+            lessonCard.onclick = () => {
+                document.body.append(info);
+                infoContent.classList.add('lesson-info__active');
+                info.classList.add('lesson-info__activeBg');
+                
+                
+                let infoContentElems = infoContent.querySelectorAll('.lesson-info_txt');
+                for(let i = 0; i < infoContentElems.length; i++){
+                    infoContentElems[i].style.marginBottom = '20px';
+                    infoContentElems[i].classList.add('lesson-info__innerActive');
+                    infoContentElems[i].addEventListener('animationend', () => {infoContentElems[i].style.marginBottom = '0px'})
+                }
+            }
+    
+            info.onanimationend = () => {
+                info.onclick = () => {
+                    infoContent.style.bottom = '-40vh';
+                    info.style.opacity = 0; 
+                    
+                    info.addEventListener('transitionend', () => {
+                        info.remove();
+                        infoContent.style.bottom = 0;
+                        info.style.opacity = 1;
+    
+                        info.onclick = null;
+                    })
+                }
+            }   
+    
+            lessonCard.append(line);
+        }
+    
+        if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем
+            dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
+        
+        // обработка свайпа
+        let firstTouch;
+        dayBlock.ontouchmove = function(evt){
+            // console.log(evt.changedTouches[0].pageX);
+            // console.log(document.documentElement.clientWidth /2);   
+            // console.log(dayCount);
+            
+            if(!firstTouch)
+                firstTouch = evt.changedTouches[0].pageX;
+
+                dayBlock.style.right = `${firstTouch - evt.changedTouches[0].pageX}px`;
+
+            // если firstTouch больше, показываем следующий день
+            dayBlock.ontouchend = () => {
+                let selectedDay;
+                for(weekDay of weekDays){
+                    if(weekDay.isHightLight)
+                        selectedDay = weekDay;  
+                }
+                let newDay;
+                let oldDay = dayBlock;
+                
+                oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
+                oldDay.classList.add('lessons__dropOld');
+                
+                
+                if(firstTouch < evt.changedTouches[0].pageX){
+                    let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
+                    
+                    newDay = loadDay(previousDayCount, groupeName);
+                    newDay.classList.add('lessons__insertNew');
+                    setBgAndColor(selectedDay, '100%', '50%', BLACK);
+                    setBgAndColor(weekDays[previousDayCount - 1]);
+                    
+                    oldDay.style.animationName = 'dropLessonsRight';
+                    newDay.style.animationName = 'insertLessonsRight';
+                }else{
+                    let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
+                    
+                    newDay = loadDay(nextDayCount, groupeName);
+                    newDay.classList.add('lessons__insertNew');
+                    
+                    setBgAndColor(selectedDay, '0%', '50%', BLACK);
+                    setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
+                    
+                    oldDay.style.animationName = 'dropLessonsLeft';
+                    newDay.style.animationName = 'insertLessonsLeft';     
+                }
+
+                document.body.firstElementChild.after(newDay);
+
+                    oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
+
+                    oldDay.addEventListener('animationend', () => {oldDay.remove();});
+
+                firstTouch = null;
+            };
+        }
+    
+        dayBlock.dayCount = dayCount;
+        return dayBlock;    
+    }
     let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
     let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
 
@@ -214,8 +266,17 @@ function loadAll(groupeName){
         }, 50);
     }
 
-    function changeDay(nextDay){
-        let selectedDay;
+    // добавление обработчика нажатия на кнопки дней
+    for (let i = 0; i < weekDays.length; i++) {
+        setBgAndColor(weekDays[i], '0%', '0%', BLACK);
+
+        // выделение сегодняшнего дня в рамку
+        if (i == NOW.getDay()-1)
+            weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
+
+        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
+        weekDays[i].addEventListener('click', function(){
+            let selectedDay;
             for(weekDay of weekDays){
                 if(weekDay.isHightLight)
                     selectedDay = weekDay;  
@@ -224,13 +285,15 @@ function loadAll(groupeName){
             weekDays = Array.from(weekDays);
             if(document.querySelectorAll('.lessons').length < 2){
                 if(weekDays.indexOf(selectedDay) != weekDays.indexOf(event.target)){
-                    let newDay = loadDay(nextDay, groupeName);
+                    let newDay = loadDay(i+1, groupeName);
                     let oldDay = document.querySelector('.lessons');
                     
                     oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
                     oldDay.classList.add('lessons__dropOld');
-
+                    
                     newDay.classList.add('lessons__insertNew');
+                    
+                    
 
                     if(weekDays.indexOf(selectedDay) > weekDays.indexOf(event.target)){
                         setBgAndColor(selectedDay, '100%', '50%', BLACK);
@@ -250,24 +313,11 @@ function loadAll(groupeName){
 
                     oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
 
-                    oldDay.addEventListener('animationend', () => {oldDay.remove();})
+                    oldDay.addEventListener('animationend', () => {oldDay.remove();});
                 }
             }
             
             selectCurrentLesson();
-    }
-
-    // добавление обработчика нажатия на кнопки дней
-    for (let i = 0; i < weekDays.length; i++) {
-        setBgAndColor(weekDays[i], '0%', '0%', BLACK);
-
-        // выделение сегодняшнего дня в рамку
-        if (i == NOW.getDay()-1)
-            weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
-
-        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
-        weekDays[i].addEventListener('click', function(){
-            changeDay(i+1);
         })
     }
 
