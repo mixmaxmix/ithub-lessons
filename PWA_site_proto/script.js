@@ -1,7 +1,7 @@
 function getRnd(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min; //Максимум и минимум включаются
+    return Math.floor(Math.random() * (max - min + 1)) + min; // максимум и минимум включаются
 }
 
 // week - объект, где ключи - дни недели, а значения - массивы с парами, сгенерирован автоматически на основе таблицы с расписанием
@@ -10,7 +10,7 @@ function getRnd(min, max) {
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
 const NOW = new Date(Date.now());
 const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
-const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 00), NOW.setHours(20, 40)]; // времена начала пар
+const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 0), NOW.setHours(20, 40)]; // времена начала пар
 const DURATION = 400;
 
 // цвета
@@ -35,7 +35,7 @@ function getCurentWeekColor(){
     return currentWeerColor;
 }
 
-//функция, которая загружает весь интерфейс расписания
+// функция, которая загружает весь интерфейс расписания
 function loadAll(groupeName){
     function loadDay(dayCount, groupe) {
         let currentDay = week[groupe][DAYS[dayCount]];
@@ -78,7 +78,8 @@ function loadAll(groupeName){
                 <h4 class="lesson__title"></h4>
                 <span class="lesson__aud"></span>
             </div>
-            <div class="lesson__arrow"></div>`;
+            <div class="lesson__arrow"></div>
+            <div class="lesson__line"></div>`;
     
             // время
             let times = lessonCard.querySelectorAll('.lesson__time');
@@ -92,35 +93,24 @@ function loadAll(groupeName){
             dayBlock.querySelector('.lessons__content').append(lessonCard);
     
             // линия после каждого элемента
-            let line = document.createElement('div');
-            line.className = 'lesson__line';
-            lessonCard.append(line);
+            
     
             //  создание обеда после второй пары
-            if (currentLesson.count === 2 && currentDay[i + 1]) {
+            if(currentLesson.count === 2 && currentDay[i + 1]) {
                 let dinner = document.createElement('div');
-                dinner.innerHTML = lessonCard.innerHTML;
-                dinner.className = lessonCard.className;
+                dinner.innerHTML = `<div class="lesson__time-cont"></div>
+                <div class="lesson__content">
+                    <h4 class="lesson__title">Обед</h4>
+                </div>
+                <div class="lesson__line"></div>`;
+                dinner.classList.add(lessonCard.className, 'lessons_diner');
                 dinner.id = 'dinner';
-                dinner.querySelector('.lesson__arrow').remove(); //удаление стрелки "подробнее"
     
                 // время обеда
-                let dinnerTimes = dinner.querySelectorAll('.lesson__time');
-                let dinnerStartTime = endTime;
-                let dinnerEndTime = new Date(START_TIMES[currentDay[i + 1].count - 1]); // время начала следующей пары
-    
-                dinnerTimes[0].innerText = `${dinnerStartTime.getHours()}:${dinnerStartTime.getMinutes() / 10 === 0 ? `0${dinnerStartTime.getMinutes()}` : dinnerStartTime.getMinutes()} `;
-                dinnerTimes[1].innerText = `${dinnerEndTime.getHours()}:${dinnerEndTime.getMinutes() / 10 === 0 ? `0${dinnerEndTime.getMinutes()}` : dinnerEndTime.getMinutes()} `;
-    
-                // и так далее
-                dinner.querySelector('.lesson__title').innerText = 'Обед';
-    
-                dinner.querySelector('.lesson__aud').innerText = 'Приятного аппетита!';
+                let dinnerTime = (START_TIMES[currentDay[i + 1].count - 1] - endTime) / (60*1000);
+                dinner.querySelector('.lesson__time-cont').innerHTML = dinnerTime >= 60 ?`${dinnerTime / 60} ч.` : `${dinnerTime} м.`;
     
                 dayBlock.querySelector('.lessons__content').append(dinner);
-    
-                dinner.append(line)
-    
             }
     
             // название предмета
@@ -155,12 +145,9 @@ function loadAll(groupeName){
                 infoContent.classList.add('lesson-info__active');
                 info.classList.add('lesson-info__activeBg');
                 
-                
-                let infoContentElems = infoContent.querySelectorAll('.lesson-info_txt');
-                for(let i = 0; i < infoContentElems.length; i++){
-                    infoContentElems[i].style.marginBottom = '20px';
-                    infoContentElems[i].classList.add('lesson-info__innerActive');
-                    infoContentElems[i].addEventListener('animationend', () => {infoContentElems[i].style.marginBottom = '0px'})
+                for(infoContentElem of infoContent.querySelectorAll('.lesson-info_txt')){
+                    infoContentElem.classList.add('lesson-info__innerActive');
+                    infoContentElem.addEventListener('animationend', () => {infoContentElem.style.marginBottom = '0px'})
                 }
             }
     
@@ -178,73 +165,92 @@ function loadAll(groupeName){
                     })
                 }
             }   
-    
-            lessonCard.append(line);
         }
     
-        if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэто прежде чем удалять, проверяем
+        if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэтому прежде чем удалять, проверяем
             dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
         
         // обработка свайпа
-        let firstTouch;
-        dayBlock.ontouchmove = function(evt){
-            // console.log(evt.changedTouches[0].pageX);
-            // console.log(document.documentElement.clientWidth /2);   
-            // console.log(dayCount);
+        // событие начала касания экрана
+        dayBlock.ontouchstart = () => {
+            let firstTouchX;
+
+            // обработка движение - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
+            const MIN_X_CHANGE = 28;
             
-            if(!firstTouch)
-                firstTouch = evt.changedTouches[0].pageX;
+            dayBlock.ontouchmove = function(evt){
+                if(!firstTouchX)
+                    firstTouchX = evt.changedTouches[0].pageX;
 
-                dayBlock.style.right = `${firstTouch - evt.changedTouches[0].pageX}px`;
-
-            // если firstTouch больше, показываем следующий день
-            dayBlock.ontouchend = () => {
-                let selectedDay;
-                for(weekDay of weekDays){
-                    if(weekDay.isHightLight)
-                        selectedDay = weekDay;  
+                if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
+                    if(firstTouchX < evt.changedTouches[0].pageX)
+                        dayBlock.style.right = `${((firstTouchX + MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
+                    else
+                        dayBlock.style.right = `${((firstTouchX - MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
                 }
-                let newDay;
-                let oldDay = dayBlock;
                 
-                oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
-                oldDay.classList.add('lessons__dropOld');
-                
-                
-                if(firstTouch < evt.changedTouches[0].pageX){
-                    let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
-                    
-                    newDay = loadDay(previousDayCount, groupeName);
-                    newDay.classList.add('lessons__insertNew');
-                    setBgAndColor(selectedDay, '100%', '50%', BLACK);
-                    setBgAndColor(weekDays[previousDayCount - 1]);
-                    
-                    oldDay.style.animationName = 'dropLessonsRight';
-                    newDay.style.animationName = 'insertLessonsRight';
-                }else{
-                    let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
-                    
-                    newDay = loadDay(nextDayCount, groupeName);
-                    newDay.classList.add('lessons__insertNew');
-                    
-                    setBgAndColor(selectedDay, '0%', '50%', BLACK);
-                    setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
-                    
-                    oldDay.style.animationName = 'dropLessonsLeft';
-                    newDay.style.animationName = 'insertLessonsLeft';     
+            
+                // если firstTouchX больше, показываем следующий день
+                dayBlock.ontouchend = () => {
+                    if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
+                        let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
+                        let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
+                        
+                        let selectedDay;
+                        for(weekDay of weekDays){
+                            if(weekDay.isHightLight)
+                                selectedDay = weekDay;  
+                        }
+                        let newDay;
+                        let oldDay = dayBlock;
+                        
+                        oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
+                        oldDay.classList.add('lessons__dropOld');
+                        
+                        if(firstTouchX < evt.changedTouches[0].pageX){
+                            
+                            newDay = loadDay(previousDayCount, groupeName);
+                            newDay.classList.add('lessons__insertNew');
+                            setBgAndColor(selectedDay, '100%', '50%', BLACK);
+                            setBgAndColor(weekDays[previousDayCount - 1]);
+                            
+                            oldDay.style.animationName = 'dropLessonsRight';
+                            newDay.style.animationName = 'insertLessonsRight';
+                        }else{
+                            
+                            newDay = loadDay(nextDayCount, groupeName);
+                            newDay.classList.add('lessons__insertNew');
+                            
+                            setBgAndColor(selectedDay, '0%', '50%', BLACK);
+                            setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
+                            
+                            oldDay.style.animationName = 'dropLessonsLeft';
+                            newDay.style.animationName = 'insertLessonsLeft';     
+                        }
+                        
+                        document.body.firstElementChild.after(newDay);
+                        
+                        oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
+                        oldDay.addEventListener('animationend', () => {
+                            oldDay.remove();
+                        });
+                        
+                        dayBlock.ontouchstart = null;
+                        dayBlock.ontouchmove = null;
+                        dayBlock.ontouchend = null;
+                    }else{
+                        dayBlock.style.right = "0px";
+                    }
+                    firstTouchX = null;
+                    firstTouchY = null;
                 }
-
-                document.body.firstElementChild.after(newDay);
-
-                    oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
-
-                    oldDay.addEventListener('animationend', () => {oldDay.remove();});
-
-                firstTouch = null;
-            };
+            }
         }
     
         dayBlock.dayCount = dayCount;
+
+        selectCurrentLesson(dayBlock);
+        
         return dayBlock;    
     }
     let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
@@ -317,7 +323,7 @@ function loadAll(groupeName){
                 }
             }
             
-            selectCurrentLesson();
+            // selectCurrentLesson();
         })
     }
 
@@ -338,7 +344,7 @@ function loadAll(groupeName){
 }
 
 // выбор теукущей пары, после загрузки документа вызывается каждую минуту, или при переключении дня
-function selectCurrentLesson(){
+function selectCurrentLesson(lessonsElem){
     let currentLessonCount;
     for(let i = 0; i < START_TIMES.length; i++){
         if(TRUE_NOW.getTime() - START_TIMES[i] <= (90*60*1000) && TRUE_NOW.getTime() - START_TIMES[i] >= 0){
@@ -346,8 +352,8 @@ function selectCurrentLesson(){
             break;
         }
     }
-    if(document.querySelector(`#l${currentLessonCount}`) && document.querySelector('.lessons').dayCount === NOW.getDay())
-        document.querySelector(`#l${currentLessonCount}`).style.color = getCurentWeekColor();
+    if(lessonsElem.querySelector(`#l${currentLessonCount}`) && lessonsElem.dayCount === NOW.getDay())
+    lessonsElem.querySelector(`#l${currentLessonCount}`).style.color = getCurentWeekColor();
 }  
 
 // когда документ полностью загрузился
@@ -463,7 +469,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.settings').remove();
         }
     }
-
-    selectCurrentLesson();
-    setInterval(selectCurrentLesson, 60*1000);
+    // определяем высоту приложение на весь доступный экран
+    document.body.style.height = `${window.innerHeight}px`;
 })

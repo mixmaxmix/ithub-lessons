@@ -28,7 +28,7 @@
 
 
 .lessons
-    height 60vh
+    height 60%
     card()
     // transition trans_dur ease
     position relative
@@ -55,11 +55,11 @@
     width 100vw - pad_main_aside*2
     position absolute
     right 0vw
-    animation-duration trans_dur*1.3
+    animation-duration trans_dur
     animation-timing-function ease
 .lessons__insertNew
     position relative
-    animation insertLessons trans_dur*1.3 ease
+    animation insertLessons trans_dur ease
 
 
 
@@ -115,7 +115,7 @@ arrow_size = 15px
 .lesson-info
     flBox(flex-end, center, column)
     width 100%
-    height 100vh
+    height 100%
     background-color alpha(col_black, 0.5)
     position fixed
     transition trans_dur ease
@@ -299,7 +299,7 @@ arrow_size = 15px
 
 .settings
     width 100vw
-    height 100vh - height_navbar
+    height 'calc(100% - %s)' %height_navbar
     padding 0 pad_main_aside
     box-sizing border-box
     position absolute
@@ -312,9 +312,27 @@ arrow_size = 15px
 
 
 
+
+// модификаторы
+.lessons_diner
+    // justify-content center
+    color alpha(col_black, 0.2)
+    align-items center
+    .lesson__time-cont
+        flex-direction row
+        // width 40%
+    .lesson__time
+        margin-bottom 0
+        // margin-right 5px
+    .lesson__title
+        margin 0
+
+
+
+
 @media (min-height : 595px)
     .lessons
-        height 68vh
+        height 68%
     .navbar__icon
         width 3vh
         height @width
