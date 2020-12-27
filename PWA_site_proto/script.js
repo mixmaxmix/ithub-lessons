@@ -174,25 +174,40 @@ function loadAll(groupeName){
         // событие начала касания экрана
         dayBlock.ontouchstart = () => {
             let firstTouchX;
+            let firstTouchY;
+            console.log('start');
 
-            // обработка движение - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
-            const MIN_X_CHANGE = 28;
+            // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
+            const MIN_X_CHANGE = 25;  
             
-            dayBlock.ontouchmove = function(evt){
-                if(!firstTouchX)
-                    firstTouchX = evt.changedTouches[0].pageX;
+            let blockSwipe = evt => {
+                if(!firstTouchY)
+                    firstTouchY = evt.changedTouches[0].pageY;  
+                    
+                if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > 30){
+                    // dayBlock.style.right = '0px'
+                    console.log('block');
+                    firstTouchY = null;
+                    dayBlock.removeEventListener('touchmove', swipe);
+                }
+            }
 
+            dayBlock.addEventListener('touchmove', blockSwipe);
+
+            let swipe = evt => {
+                if(!firstTouchX)
+                    firstTouchX = evt.changedTouches[0].pageX;  
+                
                 if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
                     if(firstTouchX < evt.changedTouches[0].pageX)
                         dayBlock.style.right = `${((firstTouchX + MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
                     else
                         dayBlock.style.right = `${((firstTouchX - MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
-                }
-                
-            
-                // если firstTouchX больше, показываем следующий день
-                dayBlock.ontouchend = () => {
-                    if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
+
+                    dayBlock.removeEventListener('touchmove', blockSwipe)
+                        // если firstTouchX больше, показываем следующий день
+                    dayBlock.ontouchend = () => {
+
                         let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
                         let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
                         
@@ -238,15 +253,13 @@ function loadAll(groupeName){
                         dayBlock.ontouchstart = null;
                         dayBlock.ontouchmove = null;
                         dayBlock.ontouchend = null;
-                    }else{
-                        dayBlock.style.right = "0px";
+
+                        firstTouchX = null;
                     }
-                    firstTouchX = null;
-                    firstTouchY = null;
                 }
             }
+            dayBlock.addEventListener('touchmove', swipe);
         }
-    
         dayBlock.dayCount = dayCount;
 
         selectCurrentLesson(dayBlock);
@@ -470,5 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // определяем высоту приложение на весь доступный экран
-    document.body.style.height = `${window.innerHeight}px`;
+    document.body.style.height = `${window.innerHeight-1}px`;
+    window.onresize = () => {
+        document.body.style.height = `${window.innerHeight-1}px`;
+    }
 })
