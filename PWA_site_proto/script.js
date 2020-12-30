@@ -6,6 +6,11 @@ function getRnd(min, max) {
 
 // week - объект, где ключи - дни недели, а значения - массивы с парами, сгенерирован автоматически на основе таблицы с расписанием
 // groupes - массив с группами
+async function getWeek(groupe){
+    let response = await fetch(`sourses/${groupe}_week.json`);
+
+    return response.json();
+}
 
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
 const NOW = new Date(Date.now());
@@ -36,9 +41,10 @@ function getCurentWeekColor(){
 }
 
 // функция, которая загружает весь интерфейс расписания
-function loadAll(groupeName){
-    function loadDay(dayCount, groupe) {
-        let currentDay = week[groupe][DAYS[dayCount]];
+async function loadAll(groupeName){
+    let week = await getWeek(groupeName);
+    function loadDay(dayCount) {
+        let currentDay = week[DAYS[dayCount]];
     
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
@@ -171,12 +177,12 @@ function loadAll(groupeName){
             dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
         
         // обработка свайпа
+
         // событие начала касания экрана
         dayBlock.ontouchstart = () => {
+
             let firstTouchX;
             let firstTouchY;
-            console.log('start');
-
             // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
             const MIN_X_CHANGE = 25;  
             
@@ -185,14 +191,10 @@ function loadAll(groupeName){
                     firstTouchY = evt.changedTouches[0].pageY;  
                     
                 if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > 30){
-                    // dayBlock.style.right = '0px'
-                    console.log('block');
                     firstTouchY = null;
                     dayBlock.removeEventListener('touchmove', swipe);
                 }
             }
-
-            dayBlock.addEventListener('touchmove', blockSwipe);
 
             let swipe = evt => {
                 if(!firstTouchX)
@@ -204,10 +206,10 @@ function loadAll(groupeName){
                     else
                         dayBlock.style.right = `${((firstTouchX - MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
 
-                    dayBlock.removeEventListener('touchmove', blockSwipe)
-                        // если firstTouchX больше, показываем следующий день
-                    dayBlock.ontouchend = () => {
+                    dayBlock.removeEventListener('touchmove', blockSwipe);
 
+                    // если firstTouchX больше, показываем следующий день
+                    dayBlock.ontouchend = () => {
                         let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
                         let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
                         
@@ -220,12 +222,12 @@ function loadAll(groupeName){
                         let oldDay = dayBlock;
                         
                         oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
-                        oldDay.classList.add('lessons__dropOld');
+                        oldDay.classList.add('lessons_dropOld');
                         
                         if(firstTouchX < evt.changedTouches[0].pageX){
                             
                             newDay = loadDay(previousDayCount, groupeName);
-                            newDay.classList.add('lessons__insertNew');
+                            newDay.classList.add('lessons_insertNew');
                             setBgAndColor(selectedDay, '100%', '50%', BLACK);
                             setBgAndColor(weekDays[previousDayCount - 1]);
                             
@@ -234,7 +236,7 @@ function loadAll(groupeName){
                         }else{
                             
                             newDay = loadDay(nextDayCount, groupeName);
-                            newDay.classList.add('lessons__insertNew');
+                            newDay.classList.add('lessons_insertNew');
                             
                             setBgAndColor(selectedDay, '0%', '50%', BLACK);
                             setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
@@ -251,13 +253,13 @@ function loadAll(groupeName){
                         });
                         
                         dayBlock.ontouchstart = null;
-                        dayBlock.ontouchmove = null;
+                        dayBlock.removeEventListener('touchmove', swipe);
                         dayBlock.ontouchend = null;
-
                         firstTouchX = null;
                     }
                 }
             }
+            dayBlock.addEventListener('touchmove', blockSwipe);
             dayBlock.addEventListener('touchmove', swipe);
         }
         dayBlock.dayCount = dayCount;
@@ -270,7 +272,7 @@ function loadAll(groupeName){
     let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
 
     // загрузка карточки с парами для сегодняшнего дня
-    document.body.firstElementChild.after(loadDay(nowDay, groupeName));
+    document.body.firstElementChild.after(loadDay(nowDay));
 
     // выделение активного дня
     function setBgAndColor(elem, bgPos = '50%', bgDefaultPos = '0%', color = WHITE) {
@@ -294,7 +296,7 @@ function loadAll(groupeName){
             weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
 
         // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
-        weekDays[i].addEventListener('click', function(){
+        weekDays[i].addEventListener('click', evt => {
             let selectedDay;
             for(weekDay of weekDays){
                 if(weekDay.isHightLight)
@@ -303,26 +305,26 @@ function loadAll(groupeName){
 
             weekDays = Array.from(weekDays);
             if(document.querySelectorAll('.lessons').length < 2){
-                if(weekDays.indexOf(selectedDay) != weekDays.indexOf(event.target)){
-                    let newDay = loadDay(i+1, groupeName);
+                if(weekDays.indexOf(selectedDay) != weekDays.indexOf(evt.target)){
+                    let newDay = loadDay(i+1);
                     let oldDay = document.querySelector('.lessons');
                     
                     oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
-                    oldDay.classList.add('lessons__dropOld');
+                    oldDay.classList.add('lessons_dropOld');
                     
-                    newDay.classList.add('lessons__insertNew');
+                    newDay.classList.add('lessons_insertNew');
                     
                     
 
-                    if(weekDays.indexOf(selectedDay) > weekDays.indexOf(event.target)){
+                    if(weekDays.indexOf(selectedDay) > weekDays.indexOf(evt.target)){
                         setBgAndColor(selectedDay, '100%', '50%', BLACK);
-                        setBgAndColor(event.target);
+                        setBgAndColor(evt.target);
                         
                         oldDay.style.animationName = 'dropLessonsRight';
                         newDay.style.animationName = 'insertLessonsRight';
                     }else{
                         setBgAndColor(selectedDay, '0%', '50%', BLACK);
-                        setBgAndColor(event.target, '50%', '100%');
+                        setBgAndColor(evt.target, '50%', '100%');
 
                         oldDay.style.animationName = 'dropLessonsLeft';
                         newDay.style.animationName = 'insertLessonsLeft'; 
@@ -350,7 +352,7 @@ function loadAll(groupeName){
 
     // если есть блок с выбором группы, убиваем его, и даем всем элементам под ним быть видимыми
     if(document.querySelector('.groupes')){
-        document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '1';});
+        document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'visible';});
         document.querySelector('.groupes').remove();  
     }
 
@@ -420,9 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         // убираем все элементы и на абсолютной позиции показываем выбор групп
-        document.body.querySelectorAll('*').forEach((elem) => {elem.style.opacity = '0';});
-        document.querySelector('.groupes').style.opacity = '1';     
-        document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.opacity = '1';}); 
+        document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'hidden';});
+        document.querySelector('.groupes').style.visibility = 'visible';     
+        document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.visibility = 'visible';}); 
     }else{
         loadAll(sessionStorage.groupe);
     }

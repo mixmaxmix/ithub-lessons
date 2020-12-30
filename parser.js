@@ -14,38 +14,30 @@ for(let j = 0; j < letters.length; j++){
 }
 
 letters = letters.concat(doubleLetters);
-console.log(groupes.length);
 
-fs.appendFileSync(FILE_PATH,'week = {');
 
-// authorize(credentials, getGroupes);
-authorize(credentials);
 
-function authorize(credentials) {
+authorize();
+
+async function authorize() {
     const {client_secret, client_id, redirect_uris} = credentials;
     const oAuth2Client = new google.auth.OAuth2(
         client_id, client_secret, redirect_uris[0]);
 
     oAuth2Client.setCredentials(token);
-    for(let i = 4; i < groupes.length*2+4; i+=2){
-            console.log(letters[i] + ' ' + letters[i+1] + ' ' + groupes[(i-4)/2]);
-            getLessons(oAuth2Client, letters[i], letters[i+1], groupes[(i-4)/2]);
-    }
-    setTimeout(() => (fs.appendFileSync(FILE_PATH,'}')), 10000);
+
+    return oAuth2Client;
 }
 
-//all - D5:CW84
-
-
-function getLessons(auth, startLetter, endLetter, groupe) {
+async function getLessons(startLetter, endLetter) {
+    let auth = await authorize();
     const sheets = google.sheets({version: 'v4', auth});
-    sheets.spreadsheets.values.get({
+    let properties = {
         spreadsheetId: '1uebUDAixmx3RHUtxbMD2mEB96DxdaZBlpDFf5IZQBfQ',
         range: `${startLetter}5:${endLetter}71`
-    }, (err, res) => {
-        if (err) return console.log('The API returned an error: ' + err);
-    
-        
+    };
+
+    let getWeek = (res) => {
         createLesson = (aud, place, title, teacher, count = 0) =>({
             title: title,
             aud:aud,
@@ -83,8 +75,25 @@ function getLessons(auth, startLetter, endLetter, groupe) {
             }
             week[weekKeys[i]] = currentLessons;
         }
-        fs.appendFileSync(FILE_PATH, `"${groupe}" : ${JSON.stringify(week)},`);
+        return week;
+    }
+
+    return new Promise((resolve, reject) => {
+        sheets.spreadsheets.values.get(properties, (err, res) => {
+            if (err) reject(err)
+            else resolve(getWeek(res));
+        });
     });
+}
+
+for(let i = 4; i < groupes.length*2+4; i+=2){
+    let currentGroupe = groupes[(i-4)/2]
+    getLessons(letters[i], letters[i+1], currentGroupe)
+    .then(result => {
+        fs.writeFileSync(`PWA_site_proto/sourses/${currentGroupe}_week.json`, JSON.stringify(result));
+        // console.log(result);
+    })
+    .catch(console.log);
 }
 
 function getGroupes(auth){

@@ -74,14 +74,14 @@
   box-sizing: border-box;
   border-radius: 20px 20px 0 0;
 }
-.lessons__dropOld {
+.lessons_dropOld {
   width: 90vw;
   position: absolute;
   right: 0vw;
   animation-duration: 0.37s;
   animation-timing-function: ease;
 }
-.lessons__insertNew {
+.lessons_insertNew {
   position: relative;
   animation: insertLessons 0.37s ease;
 }
