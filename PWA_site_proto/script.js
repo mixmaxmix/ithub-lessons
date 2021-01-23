@@ -4,11 +4,23 @@ function getRnd(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min; // максимум и минимум включаются
 }
 
+function hexToRgb(color) {
+    let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+    return result ? {
+        r: parseInt(result[1], 16),
+       g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+} 
+
 // week - объект, где ключи - дни недели, а значения - массивы с парами, сгенерирован автоматически на основе таблицы с расписанием
 // groupes - массив с группами
 async function getWeek(groupe){
-    let response = await fetch(`sourses/${groupe}_week.json`);
-
+    let response = await fetch(`sourses/weeks/${groupe}_week.json`);
+    return response.json();
+}
+async function getGroupes(){
+    let response = await fetch(`sourses/groupes.json`);
     return response.json();
 }
 
@@ -32,12 +44,12 @@ function getCurentWeekColor(){
 
     dateToProcess.setDate(NOW.getDate() + 4 - (NOW.getDay()||7));
     
-    let currentWeerColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? RED : BLUE;
+    let currentWeekColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? RED : BLUE;
     if(NOW.getDay() == 6 || NOW.getDay() == 0){
-        currentWeerColor = currentWeerColor === RED ? BLUE : RED;
+        currentWeekColor = currentWeekColor === RED ? BLUE : RED;
     }
     
-    return currentWeerColor;
+    return currentWeekColor;
 }
 
 // функция, которая загружает весь интерфейс расписания
@@ -45,6 +57,7 @@ async function loadAll(groupeName){
     let week = await getWeek(groupeName);
     function loadDay(dayCount) {
         let currentDay = week[DAYS[dayCount]];
+        
     
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
@@ -73,7 +86,17 @@ async function loadAll(groupeName){
         // заполнение расписанием - создание карточек с парами
         for (let i = 0; i < currentDay.length; i++) {
             let currentLesson = currentDay[i];
-    
+            // обработка разноцветности уроков
+            if(currentLesson.RED || currentLesson.BLUE){
+                let currentWeekColor = getCurentWeekColor() === RED ? 'RED' : 'BLUE'
+                if(currentLesson[currentWeekColor]){
+                    tempCount = currentLesson.count;
+                    currentLesson = currentLesson[currentWeekColor];
+                    currentLesson.count = tempCount;
+                }
+                else
+                    continue
+            }
             // определение шаблона карточки
             let lessonCard = document.createElement('div');
             lessonCard.className = 'lesson';
@@ -136,9 +159,20 @@ async function loadAll(groupeName){
                 <span class="lesson-info__count lesson-info_txt"></span>
                 <span class="lesson-info__aud lesson-info_txt"></span>
                 <span class="lesson-info__teacher lesson-info_txt"></span>
+                <!--
+                <span class="lesson-info__days-title lesson-info_txt">У вас эта пара в эти дни: </span>
+                <div class="week-days">
+                    <span class="week-days__day">Пн</span>
+                    <span class="week-days__day">Вт</span>
+                    <span class="week-days__day">Ср</span>
+                    <span class="week-days__day">Чт</span>
+                    <span class="week-days__day">Пт</span>
+                </div>
+                -->
             </div>`;
     
             info.querySelector('.lesson-info__title').innerText = currentLesson.title;
+            
             info.querySelector('.lesson-info__count').innerText = `${currentLesson.count}-${currentLesson.count === 3 ? 'я' : 'ая'} пара `;
             info.querySelector('.lesson-info__aud').innerText = 'Аудитория: ' + currentLesson.place + ' ' + (currentLesson.aud ? currentLesson.aud : '');
             info.querySelector('.lesson-info__teacher').innerText = 'Преподаватель: ' + currentLesson.teacher;
@@ -155,17 +189,21 @@ async function loadAll(groupeName){
                     infoContentElem.classList.add('lesson-info__innerActive');
                     infoContentElem.addEventListener('animationend', () => {infoContentElem.style.marginBottom = '0px'})
                 }
+                if(lessonCard.goesNow){
+                    info.querySelector('.lesson-info__count').innerText += ', идет сейчас'
+                }
             }
     
             info.onanimationend = () => {
                 info.onclick = () => {
-                    infoContent.style.bottom = '-40vh';
+                    infoContent.style.bottom = `-${infoContent.offsetHeight}px`;
                     info.style.opacity = 0; 
                     
                     info.addEventListener('transitionend', () => {
                         info.remove();
                         infoContent.style.bottom = 0;
                         info.style.opacity = 1;
+                        info.querySelector('.lesson-info__count').innerText = info.querySelector('.lesson-info__count').innerText.split(',')[0]
     
                         info.onclick = null;
                     })
@@ -345,10 +383,10 @@ async function loadAll(groupeName){
     setBgAndColor(weekDays[nowDay - 1]);
 
     //работа с элементом week-color
-    let currentWeerColorElem = document.querySelector('.week-color');
-    currentWeerColorElem.style.color = getCurentWeekColor(); // функция описана выше
-    currentWeerColorElem.firstChild.innerText = getCurentWeekColor() == RED ? 'Красная неделя' : 'Синяя неделя';
-    currentWeerColorElem.lastChild.style.backgroundColor = getCurentWeekColor();
+    let currentWeekColorElem = document.querySelector('.week-color');
+    currentWeekColorElem.style.color = getCurentWeekColor(); // функция описана выше
+    currentWeekColorElem.firstChild.innerText = getCurentWeekColor() == RED ? 'Красная неделя' : 'Синяя неделя';
+    currentWeekColorElem.lastChild.style.backgroundColor = getCurentWeekColor();
 
     // если есть блок с выбором группы, убиваем его, и даем всем элементам под ним быть видимыми
     if(document.querySelector('.groupes')){
@@ -358,7 +396,7 @@ async function loadAll(groupeName){
 
 }
 
-// выбор теукущей пары, после загрузки документа вызывается каждую минуту, или при переключении дня
+// выбор пары, которая идет в данный момент. Вызывается при переключении дня
 function selectCurrentLesson(lessonsElem){
     let currentLessonCount;
     for(let i = 0; i < START_TIMES.length; i++){
@@ -367,14 +405,22 @@ function selectCurrentLesson(lessonsElem){
             break;
         }
     }
-    if(lessonsElem.querySelector(`#l${currentLessonCount}`) && lessonsElem.dayCount === NOW.getDay())
-    lessonsElem.querySelector(`#l${currentLessonCount}`).style.color = getCurentWeekColor();
+    if(lessonsElem.querySelector(`#l${currentLessonCount}`) && lessonsElem.dayCount === NOW.getDay()){
+        let nowLesson =  lessonsElem.querySelector(`#l${currentLessonCount}`);
+        
+        nowLesson.classList.add('lesson_now');   
+
+        nowLesson.goesNow = true;
+        nowLesson.querySelectorAll('*').forEach(elem => {elem.goesNow = true})
+    }   
 }  
 
 // когда документ полностью загрузился
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    let groupes = await getGroupes();
+
     // если ничего про группы не было сохранено, предлагаем выбрать
-    if(!sessionStorage.groupe){
+    if(!localStorage.groupe){
         let groupesElement = document.createElement('div');
         groupesElement.className = 'groupes';
         groupesElement.innerHTML = `
@@ -396,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
             groupe.onclick = () =>{
                 loadAll(groupe.innerText);
-                sessionStorage.groupe = groupe.innerText;
+                localStorage.groupe = groupe.innerText;
             }
             
             groupesElement.querySelector('.groupes__cont').append(groupe);
@@ -411,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(groupeIs){
                 let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
                 loadAll(currentGroupeName);
-                sessionStorage.groupe = currentGroupeName;
+                localStorage.groupe = currentGroupeName;
             }
             else{
                 document.querySelector('.form').style.borderColor = 'red';
@@ -426,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelector('.groupes').style.visibility = 'visible';     
         document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.visibility = 'visible';}); 
     }else{
-        loadAll(sessionStorage.groupe);
+        loadAll(localStorage.groupe);
     }
 
     //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
@@ -447,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
                 <label class="groupes__form-title" for="form">Введите новую группу</label>
                 <div class="btn-form">
-                    <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
+                    <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.groupe}"></input>
                     <button class="submit">></button>
                 </div>
             </form>
@@ -465,7 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(groupeIs){
                     let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
 
-                    sessionStorage.groupe = currentGroupeName;
+                    localStorage.groupe = currentGroupeName;
                     window.location.reload();
                 }
                 else{

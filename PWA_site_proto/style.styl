@@ -68,14 +68,17 @@
     flBox(flex-start, flex-start)
     width 100%
     margin-top 10px
-    padding 0 pad_lessons_aside 15px pad_lessons_aside
+    padding 0 pad_lessons_aside pad_lesson_botom pad_lessons_aside
     box-sizing border-box
     position relative
 
 .lesson__title
     flex 0
+    padding-right 15px
     margin-top 0
     margin-bottom .7em
+    position relative
+
 
 .lesson__content
     max-width calc(100% - 10% - 15px*2 - 15px - 10px)
@@ -106,7 +109,17 @@ arrow_size = 15px
     bottom 0
     left ((100% - @width) / 2)
 
-
+.lesson_now
+    .lesson__title::after
+        content ''
+        height 7.5px
+        width @height
+        background-color col_yellow
+        border-radius 50%
+        position absolute
+        right 0px
+        bottom calc(50% - 7.5px/2)
+        // bottom 50%
 
     
 
@@ -119,6 +132,8 @@ arrow_size = 15px
     background-color alpha(col_black, 0.5)
     position fixed
     transition trans_dur ease
+    .week-days
+        margin 10px 0
 
 .lesson-info__content
     flBox(flex-start, flex-start, column)
@@ -137,6 +152,7 @@ arrow_size = 15px
     font-size 1.4em
     font-weight bold
     border-bottom 1.5px solid col_yellow
+    
 
 .lesson-info__active
     position absolute
@@ -361,7 +377,7 @@ arrow_size = 15px
 
 @keyframes info 
     0%
-        bottom - height_info   
+        bottom -100%   
     100%
         bottom 0
 
