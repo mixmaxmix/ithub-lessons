@@ -44,7 +44,7 @@ function getCurentWeekColor(){
 
     dateToProcess.setDate(NOW.getDate() + 4 - (NOW.getDay()||7));
     
-    let currentWeekColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? RED : BLUE;
+    let currentWeekColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? BLUE : RED;
     if(NOW.getDay() == 6 || NOW.getDay() == 0){
         currentWeekColor = currentWeekColor === RED ? BLUE : RED;
     }
