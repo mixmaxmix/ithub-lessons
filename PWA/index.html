@@ -3,28 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Денис Бондковский и Максим Хозяйский">
     <meta name="theme-color" content="#fabc58"/>
+    <meta name="color-scheme" content="dark light">
     <meta name="apple-mobile-web-app-status-bsr" content="#fabc58"/>
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">  
     <link rel="apple-touch-icon" href="icons/apple-icon-192x192.png">
     <link rel="shortcut icon" href="icons/favicon-32x32.png" type="image/png">
     <script src="app.js"></script>
     <script src="script.js"></script>
-    <title>Ithub-lessons</title>
+    <title>IThub-lessons</title>
 </head>
-<body class="main">
-    <h2 class="main__title">Расписание</h2>
-    <!-- сюда вставляется lessons -->
-    <div class="week-color"><h4 class="week-color__text"></h4><div class="week-color__underline"></div></div>
-    <div class="week-days">
-        <span class="week-days__day">Пн</span>
-        <span class="week-days__day">Вт</span>
-        <span class="week-days__day">Ср</span>
-        <span class="week-days__day">Чт</span>
-        <span class="week-days__day">Пт</span>
-    </div>
-    <div class="navbar__doubler"></div>
+<body>
+    
+    <div id="app"></div>
+
     <div class="navbar">
         <div class="navbar__button" id='nav_n'>
             <div class="navbar__icon navbar_notification"></div>
@@ -39,11 +35,7 @@
             <span class="navbar__btntxt">Настройки</span>
         </div>
     </div>
-    <!-- The core Firebase JS SDK is always required and must be listed first -->
-    <script src="https://www.gstatic.com/firebasejs/8.2.3/firebase-app.js"></script>
-
-    <!-- TODO: Add SDKs for Firebase products that you want to use
-        https://firebase.google.com/docs/web/setup#available-libraries -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/8.2.3/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.2.3/firebase-analytics.js"></script>
 
     <script>
@@ -61,7 +53,7 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         firebase.analytics();
-    </script>
+    </script> -->
 </body>
 </html>
 

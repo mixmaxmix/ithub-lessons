@@ -1,0 +1,10 @@
+:root{
+    --main-color:#fabc58; /*для дефолта, но на самом деле определяется в JS*/
+    --white-color:#fff;
+    --lgrey-color: #f4f6f7;
+    --black-color: #313131;
+
+    --duration: .37s;
+
+    --pad_aside: 5vw;
+}

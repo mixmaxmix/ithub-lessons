@@ -8,7 +8,7 @@ function hexToRgb(color) {
     let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
     return result ? {
         r: parseInt(result[1], 16),
-       g: parseInt(result[2], 16),
+        g: parseInt(result[2], 16),
         b: parseInt(result[3], 16)
     } : null;
 } 
@@ -24,6 +24,11 @@ async function getGroupes(){
     return response.json();
 }
 
+async function getNotificationsArray(){
+    let response = await fetch(`sourses/notification/2P2_notifications.json`);
+    return response.json();
+}
+
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
 const NOW = new Date(Date.now());
 const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
@@ -36,7 +41,9 @@ const RED = '#FF5157';
 const LGREY = '#F4F6F7';
 const BLACK = '#313131';
 const WHITE = '#FFFFFF';
-const MAIN_COLOR = '#FABC58';
+const MAIN_COLOR = '#fabc58';
+
+let activeTab = 'lessons';
 
 function getCurentWeekColor(){
     let dateToProcess = new Date(NOW.setHours(0,0,0));
@@ -53,17 +60,28 @@ function getCurentWeekColor(){
 }
 
 // функция, которая загружает весь интерфейс расписания
-async function loadAll(groupeName){
+async function loadLessons(groupeName){
     let week = await getWeek(groupeName);
+    let screen = document.querySelector('#app');
+    screen.innerHTML = `
+    <h2 class="main__title">Расписание</h2>
+    <div class="week-color"><h4 class="week-color__text"></h4><div class="week-color__underline"></div></div>
+    <div class="week-days">
+        <span class="week-days__day">Пн</span>
+        <span class="week-days__day">Вт</span>
+        <span class="week-days__day">Ср</span>
+        <span class="week-days__day">Чт</span>
+        <span class="week-days__day">Пт</span>
+    </div>`
+
     function loadDay(dayCount) {
         let currentDay = week[DAYS[dayCount]];
         
-    
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
             <h3 class="lessons__title"></h3>
             <div class="lessons__content"></div>`;
-        dayBlock.className = 'lessons'
+        dayBlock.className = 'lessons';
     
         // изменение заголоква lessons__title
         let dayDesc;
@@ -80,22 +98,28 @@ async function loadAll(groupeName){
             betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
             `Через ${betweenNowAndSelected} дней`;
         
-    
-        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>, ${currentDay.length + `${currentDay.length == 0 ? ' пар' : currentDay.length == 1 ? ' пара' : ' пары'}`}`;
+        let currentWeekColor = getCurentWeekColor() === RED ? 'RED' : 'BLUE';
+
+        let lessonsCount = 0;
+        for(lesson of currentDay){
+            if(lesson[currentWeekColor] || lesson.title) lessonsCount++;
+        }
+
+        let lessonsCountPhrase = lessonsCount + `${lessonsCount == 0 ? ' пар' : lessonsCount == 1 ? ' пара' : ' пары'}`;
+        
+        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>, ${lessonsCountPhrase}`;
     
         // заполнение расписанием - создание карточек с парами
         for (let i = 0; i < currentDay.length; i++) {
             let currentLesson = currentDay[i];
             // обработка разноцветности уроков
             if(currentLesson.RED || currentLesson.BLUE){
-                let currentWeekColor = getCurentWeekColor() === RED ? 'RED' : 'BLUE'
                 if(currentLesson[currentWeekColor]){
                     tempCount = currentLesson.count;
                     currentLesson = currentLesson[currentWeekColor];
                     currentLesson.count = tempCount;
                 }
-                else
-                    continue
+                else continue
             }
             // определение шаблона карточки
             let lessonCard = document.createElement('div');
@@ -114,9 +138,12 @@ async function loadAll(groupeName){
             let times = lessonCard.querySelectorAll('.lesson__time');
             let startTime = new Date(START_TIMES[currentLesson.count - 1]);
             let endTime = new Date(+startTime + 90 * 6e4);
-    
-            times[0].innerText = `${startTime.getHours()}:${startTime.getMinutes() / 10 === 0 ? `0${startTime.getMinutes()}` : startTime.getMinutes()} `;
-            times[1].innerText = `${endTime.getHours()}:${endTime.getMinutes() / 10 === 0 ? `0${endTime.getMinutes()}` : endTime.getMinutes()} `;
+            
+            let startTimeMin = startTime.getMinutes() / 10 === 0 ? `0${startTime.getMinutes()}` : startTime.getMinutes();
+            let endTimeMin = endTime.getMinutes() / 10 === 0 ? `0${endTime.getMinutes()}` : endTime.getMinutes();
+
+            times[0].innerText = `${startTime.getHours()}:${startTimeMin} `;
+            times[1].innerText = `${endTime.getHours()}:${endTimeMin} `;
     
             // происходит простое добавление карточки в расписание
             dayBlock.querySelector('.lessons__content').append(lessonCard);
@@ -218,7 +245,6 @@ async function loadAll(groupeName){
 
         // событие начала касания экрана
         dayBlock.ontouchstart = () => {
-
             let firstTouchX;
             let firstTouchY;
             // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
@@ -247,7 +273,7 @@ async function loadAll(groupeName){
                     dayBlock.removeEventListener('touchmove', blockSwipe);
 
                     // если firstTouchX больше, показываем следующий день
-                    dayBlock.ontouchend = () => {
+                    dayBlock.ontouchend = () => {                        
                         let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
                         let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
                         
@@ -283,9 +309,11 @@ async function loadAll(groupeName){
                             newDay.style.animationName = 'insertLessonsLeft';     
                         }
                         
-                        document.body.firstElementChild.after(newDay);
+                        document.querySelector('.main__title').after(newDay);
                         
                         oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
+                        oldDay.style.height = `${newDay.offsetHeight}px`;
+
                         oldDay.addEventListener('animationend', () => {
                             oldDay.remove();
                         });
@@ -306,11 +334,13 @@ async function loadAll(groupeName){
         
         return dayBlock;    
     }
-    let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
+    
     let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
-
+    
     // загрузка карточки с парами для сегодняшнего дня
-    document.body.firstElementChild.after(loadDay(nowDay));
+    document.querySelector('.main__title').after(loadDay(nowDay));
+
+    let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
 
     // выделение активного дня
     function setBgAndColor(elem, bgPos = '50%', bgDefaultPos = '0%', color = WHITE) {
@@ -333,7 +363,6 @@ async function loadAll(groupeName){
         if (i == NOW.getDay()-1)
             weekDays[i].style.border = `1.5px solid ${MAIN_COLOR}`;
 
-        // в листенере не стрелочная функция, потому что нужен this, хотя я там его не совсем использую, можно пересмотреть
         weekDays[i].addEventListener('click', evt => {
             let selectedDay;
             for(weekDay of weekDays){
@@ -352,8 +381,6 @@ async function loadAll(groupeName){
                     
                     newDay.classList.add('lessons_insertNew');
                     
-                    
-
                     if(weekDays.indexOf(selectedDay) > weekDays.indexOf(evt.target)){
                         setBgAndColor(selectedDay, '100%', '50%', BLACK);
                         setBgAndColor(evt.target);
@@ -368,9 +395,10 @@ async function loadAll(groupeName){
                         newDay.style.animationName = 'insertLessonsLeft'; 
                     }
 
-                    document.body.firstElementChild.after(newDay);
+                    document.querySelector('.main__title').after(newDay);
 
                     oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
+                    oldDay.style.height = `${newDay.offsetHeight}px`;
 
                     oldDay.addEventListener('animationend', () => {oldDay.remove();});
                 }
@@ -417,8 +445,14 @@ function selectCurrentLesson(lessonsElem){
 
 // когда документ полностью загрузился
 document.addEventListener('DOMContentLoaded', async () => {
+    document.documentElement.style.setProperty('--main-color', MAIN_COLOR); // магия происходит тут, я задаю CSS переменную, у которой значение определено в JS
+    document.documentElement.style.setProperty('--black-color', BLACK);
+    document.documentElement.style.setProperty('--white-color', WHITE);
+    document.documentElement.style.setProperty('--lgrey-color', LGREY);
+    
     let groupes = await getGroupes();
 
+    console.log(StyleSheet.title);
     // если ничего про группы не было сохранено, предлагаем выбрать
     if(!localStorage.groupe){
         let groupesElement = document.createElement('div');
@@ -433,7 +467,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
         </form>
         <div class="groupes__cont"> </div>`;
-        document.body.append(groupesElement);
+        
+        document.querySelector('#app').append(groupesElement);
         
         for(groupeName of groupes){
             let groupe = document.createElement('div');
@@ -441,7 +476,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             groupe.innerText = groupeName;
     
             groupe.onclick = () =>{
-                loadAll(groupe.innerText);
+                loadLessons(groupe.innerText);
                 localStorage.groupe = groupe.innerText;
             }
             
@@ -456,7 +491,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
             if(groupeIs){
                 let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
-                loadAll(currentGroupeName);
+                loadLessons(currentGroupeName);
                 localStorage.groupe = currentGroupeName;
             }
             else{
@@ -468,71 +503,132 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
         // убираем все элементы и на абсолютной позиции показываем выбор групп
-        document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'hidden';});
-        document.querySelector('.groupes').style.visibility = 'visible';     
-        document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.visibility = 'visible';}); 
-    }else{
-        loadAll(localStorage.groupe);
+        // document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'hidden';});
+        // document.querySelector('.groupes').style.visibility = 'visible';     
+        // document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.visibility = 'visible';}); 
+
+    } else {
+        loadLessons(localStorage.groupe);
+    }
+
+    document.querySelector('#nav_n').addEventListener('click', async () => {
+        if (activeTab === 'notifications') return;
+
+        document.querySelector('#app').innerHTML = '';
+
+        let notificationsCont = document.createElement('div');
+        notificationsCont.className = 'notifications__container';
+        notificationsCont.innerHTML = '<h2 class="notifications__title">Уведомления</h2>';
+
+        const notificationsArray = await getNotificationsArray();
+
+        notificationsArray.forEach(n => {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            if(n.type === 'change') {
+                notification.innerHTML = `
+                <div class="notifications__content">
+                    <p class="notitfication__title">${n.title}</p>
+                    <table>
+                        <tr>
+                            <td>${n.body.count} пара</td>
+                            <td>${n.body.was.title}</td>
+                        </tr>
+                        <tr>
+                            <td>${n.body.count} пара</td>
+                            <td>${n.body.became.title} </td>
+                            <td>${n.body.became.aud} </td>
+                        </tr>
+                    </table>
+                </div>`;
+            } else if(n.type === 'curator') {
+                notification.innerHTML = `
+                <div class="notifications__content">
+                    <p class="notitfication__title">${n.title}</p>
+                    <p class="notification__content">
+                    ${n.body.text}
+                    </p>
+                    <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+                </div>`;
+            } else if(n.type === 'teacher') {
+                notification.innerHTML = `
+                <div class="notifications__content">
+                    <p class="notitfication__title">${n.title}</p>
+                    <p class="notification__content">
+                    ${n.body.text}
+                    </p>
+                    <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+                </div>`;
+            }
+
+            notificationsCont.append(notification);
+        })
+        document.querySelector('#app').append(notificationsCont);
+
+        activeTab = 'notifications';
+    })
+    
+    document.querySelector('#nav_l').onclick = () =>{
+        if (activeTab === 'lessons') return;
+
+        document.querySelector('#app').innerHTML = '';
+        loadLessons(localStorage.groupe);
+
+        activeTab = 'lessons';
     }
 
     //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
-    document.querySelector('#nav_s').onclick = () =>{
-        if(!document.querySelector('.settings')){
-            document.body.querySelectorAll('*').forEach((elem) => {
-                if(!(elem.classList.value.includes('navbar'))){
-                    elem.style.transition = 'none';
-                    elem.style.visibility = 'hidden';
-                }
-            });
+    document.querySelector('#nav_s').addEventListener('click', () => {
+        if (activeTab === 'settings') return;
 
-            let settingsCont = document.createElement('div');
-            settingsCont.className = 'settings'
-    
-            settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
-            <div class="settings__content">
-            <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
-                <label class="groupes__form-title" for="form">Введите новую группу</label>
-                <div class="btn-form">
-                    <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.groupe}"></input>
-                    <button class="submit">></button>
-                </div>
-            </form>
-            </div>`;
-            document.body.append(settingsCont)
+        document.querySelector('#app').innerHTML = '';
+
+        let settingsCont = document.createElement('div');
+        settingsCont.className = 'settings'
+
+        settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
+        <div class="settings__content">
+        <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
+            <label class="groupes__form-title" for="form">Введите новую группу</label>
+            <div class="btn-form">
+                <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.groupe}"></input>
+                <button class="submit">></button>
+            </div>
+        </form>
+        </div>`;
+        document.querySelector('#app').append(settingsCont)
+        
+        document.querySelector('.submit').onclick = () => {
             
-            document.querySelector('.submit').onclick = () => {
-                
-                let groupeIs = false;
-                for(groupeName of groupes){
-                    if(document.forms.groupe.form.value.toUpperCase() == groupeName)
-                    groupeIs = true;
-                }
-                
-                if(groupeIs){
-                    let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
+            let groupeIs = false;
+            for(groupeName of groupes){
+                if(document.forms.groupe.form.value.toUpperCase() == groupeName) groupeIs = true;
+            }
+            
+            if(groupeIs){
+                let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
 
-                    localStorage.groupe = currentGroupeName;
-                    window.location.reload();
-                }
-                else{
-                    document.querySelector('.form').style.borderColor = 'red';
-                    setTimeout(() => {
-                        document.querySelector('.form').style.borderColor = MAIN_COLOR;
-                    }, 4000)
-                }
+                localStorage.groupe = currentGroupeName;
+                window.location.reload();
+            }
+            else{
+                document.querySelector('.form').style.borderColor = 'red';
+                setTimeout(() => {
+                    document.querySelector('.form').style.borderColor = MAIN_COLOR;
+                }, 4000)
             }
         }
-    }
 
-    document.querySelector('#nav_l').onclick = () =>{
-        if(document.querySelector('.settings')){
-            document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'visible';});
-            document.querySelector('.settings').remove();
-        }
-    }
+        activeTab = 'settings';
+    })
+
+    
     // определяем высоту приложение на весь доступный экран
     document.body.style.height = `${window.innerHeight-1}px`;
-    window.onresize = () => {
+    document.querySelector('#app').style.height = `${window.innerHeight-1 - document.querySelector('.navbar').offsetHeight}px`;
+    window.addEventListener('resize', () => {
         document.body.style.height = `${window.innerHeight-1}px`;
-    }
+        document.querySelector('#app').style.height = `${window.innerHeight-1 - document.querySelector('.navbar').offsetHeight}px`;
+    })
 })

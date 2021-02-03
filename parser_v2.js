@@ -100,7 +100,7 @@ async function authorize() {
                             let lesson;
                             if(cell){
                                 lesson = {};
-                                cell = cell.replace(/\s+/g, ' ').replace(/^\s+/g, '').replace(/\s+$/g, '')
+                                cell = cell.replace(/\s+/g, ' ').trim();
                                 for(groupForReplace of groupes){
                                     cell = cell.replace(new RegExp(`\\s*${[].map.call(groupForReplace, (letter) => (letter === '+' ? '\\' + letter + '\\s*' : letter + '\\s*')).join('')}`, 'gi'), ' _g_ ');
                                 }
@@ -146,16 +146,16 @@ async function authorize() {
                                         foundedAuds.push(cab);
                                     }
                                 }
-                                lesson.aud = foundedAuds.join('/');
+                                lesson.aud = foundedAuds.join('/').trim();
                         
                                 let titleEndIndex = cell.search(/_[tgc]_/i);
-                                lesson.title = cell.slice(0, titleEndIndex);
+                                lesson.title = cell.slice(0, titleEndIndex).trim();
                         
                                 while(!lesson.title || lesson.title.length < 3){
                                     cell = cell.replace(/_[tgc]_/i, '');
                                     
                                     titleEndIndex = cell.search(/_[tgc]_/i);
-                                    lesson.title = cell.slice(0, titleEndIndex);
+                                    lesson.title = cell.slice(0, titleEndIndex).trim();
                                     if(titleEndIndex = -1) break
                                 }
                             }
