@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <div class="notifications__content">
+        <p class="notitfication__title">${n.title}</p>
+        <table>
+             <tr>
+                 <td>${n.body.count} пара</td>
+                 <td>${n.body.was.title}</td>
+             </tr>
+             <tr>
+                 <td>${n.body.count} пара</td>
+                 <td>${n.body.became.title} </td>
+                 <td>${n.body.became.aud} </td>
+             </tr>
+        </table>
+     </div>
+     <!-- Эта разметка появиться только с JS -->
+     <div class="notifications__content">
+        <p class="notitfication__title">${n.title}</p>
+        <p class="notification__content">
+         ${n.body.text}
+        </p>
+        <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+     </div>
+     <div class="notifications__content">
+        <p class="notitfication__title">${n.title}</p>
+        <p class="notification__content">
+         ${n.body.text}
+        </p>
+        <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+     </div>
+</body>
+</html>

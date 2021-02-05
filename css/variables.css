@@ -1,0 +1,7 @@
+:root{
+    --main-color:#fabc58; /*для дефолта, но на самом деле определяется в JS*/
+
+    --duration: .37s;
+
+    --pad_aside: 5vw;
+}

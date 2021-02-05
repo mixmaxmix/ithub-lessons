@@ -1,0 +1,224 @@
+@-moz-keyframes info {
+    0% {
+      bottom: -100%;
+    }
+    100% {
+      bottom: 0;
+    }
+  }
+  @-webkit-keyframes info {
+    0% {
+      bottom: -100%;
+    }
+    100% {
+      bottom: 0;
+    }
+  }
+  @-o-keyframes info {
+    0% {
+      bottom: -100%;
+    }
+    100% {
+      bottom: 0;
+    }
+  }
+  @keyframes info {
+    0% {
+      bottom: -100%;
+    }
+    100% {
+      bottom: 0;
+    }
+  }
+  @-moz-keyframes infoBg {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @-webkit-keyframes infoBg {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @-o-keyframes infoBg {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes infoBg {
+    0% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @-moz-keyframes infoContent {
+    0% {
+      margin-bottom: 20px;
+    }
+    100% {
+      margin-bottom: 0;
+    }
+  }
+  @-webkit-keyframes infoContent {
+    0% {
+      margin-bottom: 20px;
+    }
+    100% {
+      margin-bottom: 0;
+    }
+  }
+  @-o-keyframes infoContent {
+    0% {
+      margin-bottom: 20px;
+    }
+    100% {
+      margin-bottom: 0;
+    }
+  }
+  @keyframes infoContent {
+    0% {
+      margin-bottom: 20px;
+    }
+    100% {
+      margin-bottom: 0;
+    }
+  }
+  @-moz-keyframes dropLessonsRight {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(100vw);
+    }
+  }
+  @-webkit-keyframes dropLessonsRight {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(100vw);
+    }
+  }
+  @-o-keyframes dropLessonsRight {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(100vw);
+    }
+  }
+  @keyframes dropLessonsRight {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(100vw);
+    }
+  }
+  @-moz-keyframes insertLessonsRight {
+    0% {
+      transform: translatex(-100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @-webkit-keyframes insertLessonsRight {
+    0% {
+      transform: translatex(-100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @-o-keyframes insertLessonsRight {
+    0% {
+      transform: translatex(-100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @keyframes insertLessonsRight {
+    0% {
+      transform: translatex(-100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @-moz-keyframes dropLessonsLeft {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(-100vw);
+    }
+  }
+  @-webkit-keyframes dropLessonsLeft {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(-100vw);
+    }
+  }
+  @-o-keyframes dropLessonsLeft {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(-100vw);
+    }
+  }
+  @keyframes dropLessonsLeft {
+    0% {
+      transform: translatex(calc(0vw - var(--pad_aside)));
+    }
+    100% {
+      transform: translatex(-100vw);
+    }
+  }
+  @-moz-keyframes insertLessonsLeft {
+    0% {
+      transform: translatex(100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @-webkit-keyframes insertLessonsLeft {
+    0% {
+      transform: translatex(100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @-o-keyframes insertLessonsLeft {
+    0% {
+      transform: translatex(100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
+  @keyframes insertLessonsLeft {
+    0% {
+      transform: translatex(100vw);
+    }
+    100% {
+      transform: translatex(0);
+    }
+  }
