@@ -10,11 +10,6 @@ html{
   overflow-x: hidden;
   overflow-y: hidden;
 }
-body {
-  font-family: 'Roboto', sans-serif;
-  color: var(--black-color);
-  background: var(--white-color);
-}
 #app {
   display: flex;
   flex-direction: column;
@@ -22,18 +17,16 @@ body {
   height: calc(100vh - 3rem);
   padding: 0 var(--pad_aside) 20px var(--pad_aside);
   background: var(--white-color);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 .main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-direction: column;
-  flex-wrap: nowrap;
   height: 100vh;
-  box-sizing: border-box;
+  font-family: 'Roboto', sans-serif;
+  color: var(--black-color);
+  background: var(--white-color);
   margin: 0;
-  padding: 0 var(--pad_aside);
+  padding: 0;
   position: relative;
   user-select: none;
 }
@@ -44,12 +37,18 @@ body {
   align-items: center;
   flex-direction: row;
   flex-wrap: nowrap;
-  height: 7vh;
+  height: 10%;
+  background: transparent;
   font-size: 1.2em;
   margin: 0;
+  flex: none;
 }
+
+
+
+
 .lessons {
-  height: 67%;
+  height: 75%;
   width: 100%;
   display: flex;
   justify-content: flex-start;
@@ -65,7 +64,8 @@ body {
   border-radius: 0 0 20px 20px;
   overflow-y: auto;
 }
-.lessons__title {
+.lessons__title,
+.notitfication__title   {
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -266,6 +266,10 @@ body {
   bottom: 0.7vh;
   background-color: rgba(49,49,49,0.7);
 }
+
+
+
+
 .navbar {
   display: flex;
   justify-content: center;
@@ -276,7 +280,7 @@ body {
   height: 7.5vh;
   box-sizing: border-box;
   padding: 0 10vw;
-  background-color: var(--lgrey-color);
+  background-color: #f4f6f7;
   color: rgba(49,49,49,0.7);
   font-size: 0.8em;
   position: fixed;
@@ -296,26 +300,32 @@ body {
   margin-bottom: 5px;
 }
 .navbar_settings {
-  background-image: url("images/settings.svg");
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
   background-attachment: scroll;
 }
 .navbar_lessons {
-  background-image: url("images/lessons.svg");
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
   background-attachment: scroll;
 }
+
 .navbar_notification {
-  background-image: url("images/notification.svg");
   background-position: center;
   background-size: contain;
   background-repeat: no-repeat;
   background-attachment: scroll;
 }
+
+.navbar__icon-color {
+  stroke: none;
+}
+
+
+
+
 .groupes {
   width: 100%;
   display: flex;
@@ -436,6 +446,10 @@ body {
   padding: 15px;
   box-sizing: border-box;
 }
+
+
+
+
 .lessons_diner {
   color: rgba(49,49,49,0.2);
   align-items: center;
@@ -449,9 +463,60 @@ body {
 .lessons_diner .lesson__title {
   margin: 0;
 }
+
+
+.notifications__container{
+  height: auto;
+  /* overflow: auto; */
+}
+.notifications__content {
+  background-color: #F4F6F7;
+  border-radius: 20px;
+  box-shadow: 0px 22px 44px -12px rgba(49,49,49,0.3);
+  margin-bottom: 2rem;
+}
+
+.notitfication_type-high {
+  background-color: #FA5A5A;
+}
+
+.notitfication_type-mid {
+  background-color: var(--main-color);
+}
+
+.notitfication_type-low {
+  background-color: #DFDFDF;
+  color: #313131;
+}
+
+.notifications_info {
+  padding: 1rem;}
+
+
+.lesson_was {
+  text-decoration: line-through;
+  opacity: 0.5;
+  display: flex;
+  justify-content: space-between;
+}
+
+.lesson_became {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.aud_became {
+  text-align: right;
+}
+
+
+
+
 @media (min-height: 595px) {
   .lessons {
-    height: 75%;
+    height: 81%;
   }
   .navbar__icon {
     width: 3vh;
@@ -467,11 +532,13 @@ body {
   }
 }
 @media (max-width: 380px) {
+  .notitfication__title 
   .lessons__title {
     font-size: 1.1em;
   }
 }
 @media (max-width: 360px) {
+  .notitfication__title 
   .lessons__title {
     font-size: 1em;
   }

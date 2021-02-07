@@ -14,16 +14,16 @@ function hexToRgb(color) {
 } 
 
 // week - объект, где ключи - дни недели, а значения - массивы с парами, сгенерирован автоматически на основе таблицы с расписанием
-// groupes - массив с группами
+// groupes - массив с назаваниями групп
 async function getWeek(groupe){
     let response = await fetch(`sourses/weeks/${groupe}_week.json`);
-    return response.json();
+    return response;
 }
 async function getGroupes(){
     let response = await fetch(`sourses/groupes.json`);
     return response.json();
 }
-
+// notification - массив объектов уведомлений
 async function getNotificationsArray(){
     let response = await fetch(`sourses/notification/2P2_notifications.json`);
     return response.json();
@@ -32,8 +32,8 @@ async function getNotificationsArray(){
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
 const NOW = new Date(Date.now());
 const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
-const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 0), NOW.setHours(20, 40)]; // времена начала пар
-const DURATION = 400;
+const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 0), NOW.setHours(20, 40)]; // времена начала пар, в дальнейшем будут лежать на сервере
+const DURATION = 400; // количество ms для длительности анимаций
 
 // цвета
 const BLUE = '#5577D7';
@@ -41,10 +41,13 @@ const RED = '#FF5157';
 const LGREY = '#F4F6F7';
 const BLACK = '#313131';
 const WHITE = '#FFFFFF';
-const MAIN_COLOR = '#fabc58';
+const MAIN_COLOR = '#7D14F3';
+const GREY = '#C0C1C2';
 
 let activeTab = 'lessons';
 
+// возвращает HEX цвет в зависимости от цета недели 
+// TODO: переделать так, чтобы возвращала название, и в тех местах где нужен цвет из объекта WEEK_COLORS будет выниматься по строке-ключу необходимое HEX значение
 function getCurentWeekColor(){
     let dateToProcess = new Date(NOW.setHours(0,0,0));
     let currentYear = new Date(NOW.getFullYear(), 0, 1);
@@ -61,53 +64,138 @@ function getCurentWeekColor(){
 
 // функция, которая загружает весь интерфейс расписания
 async function loadLessons(groupeName){
-    let week = await getWeek(groupeName);
-    let screen = document.querySelector('#app');
-    screen.innerHTML = `
-    <h2 class="main__title">Расписание</h2>
-    <div class="week-color"><h4 class="week-color__text"></h4><div class="week-color__underline"></div></div>
-    <div class="week-days">
-        <span class="week-days__day">Пн</span>
-        <span class="week-days__day">Вт</span>
-        <span class="week-days__day">Ср</span>
-        <span class="week-days__day">Чт</span>
-        <span class="week-days__day">Пт</span>
-    </div>`
-
     function loadDay(dayCount) {
-        let currentDay = week[DAYS[dayCount]];
-        
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
             <h3 class="lessons__title"></h3>
             <div class="lessons__content"></div>`;
         dayBlock.className = 'lessons';
-    
-        // изменение заголоква lessons__title
-        let dayDesc;
-        let betweenNowAndSelected = NOW.getDay() == 6 ? dayCount + 1 : NOW.getDay() == 0 ? dayCount : dayCount - NOW.getDay();
-    
-        dayDesc =
-            betweenNowAndSelected === undefined ? 'Когда-то' :
-            betweenNowAndSelected === -3 || betweenNowAndSelected === -4 ? `${NOW.getDay() - dayCount} дня назад` :
-            betweenNowAndSelected === -2 ? 'Позавчера' :
-            betweenNowAndSelected === -1 ? 'Вчера' :
-            betweenNowAndSelected === 0 ? 'Сегодня' :
-            betweenNowAndSelected === 1 ? 'Завтра' :
-            betweenNowAndSelected === 2 ? 'Послезавтра' :
-            betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
-            `Через ${betweenNowAndSelected} дней`;
+
+        dayBlock.ontouchstart = () => {
+            let firstTouchX;
+            let firstTouchY;
+            // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
+            const MIN_X_CHANGE = 25;  
+            
+            let blockSwipe = evt => {
+                if(!firstTouchY)
+                    firstTouchY = evt.changedTouches[0].pageY;  
+                    
+                if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > 30){
+                    firstTouchY = null;
+                    dayBlock.removeEventListener('touchmove', swipe);
+                }
+            }
+
+            let swipe = evt => {
+                if(!firstTouchX)
+                    firstTouchX = evt.changedTouches[0].pageX;  
+                
+                if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
+                    if(firstTouchX < evt.changedTouches[0].pageX)
+                        dayBlock.style.right = `${((firstTouchX + MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
+                    else
+                        dayBlock.style.right = `${((firstTouchX - MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
+
+                    dayBlock.removeEventListener('touchmove', blockSwipe);
+
+                    // если firstTouchX больше, показываем следующий день
+                    dayBlock.ontouchend = () => {                        
+                        let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
+                        let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
+                        
+                        let selectedDay;
+                        for(weekDay of weekDays){
+                            if(weekDay.isHightLight)
+                                selectedDay = weekDay;  
+                        }
+                        let newDay;
+                        let oldDay = dayBlock;
+                        
+                        oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
+                        oldDay.classList.add('lessons_dropOld');
+                        
+                        if(firstTouchX < evt.changedTouches[0].pageX){
+                            
+                            newDay = loadDay(previousDayCount, groupeName);
+                            newDay.classList.add('lessons_insertNew');
+                            setBgAndColor(selectedDay, '100%', '50%', BLACK);
+                            setBgAndColor(weekDays[previousDayCount - 1]);
+                            
+                            oldDay.style.animationName = 'dropLessonsRight';
+                            newDay.style.animationName = 'insertLessonsRight';
+                        }else{
+                            
+                            newDay = loadDay(nextDayCount, groupeName);
+                            newDay.classList.add('lessons_insertNew');
+                            
+                            setBgAndColor(selectedDay, '0%', '50%', BLACK);
+                            setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
+                            
+                            oldDay.style.animationName = 'dropLessonsLeft';
+                            newDay.style.animationName = 'insertLessonsLeft';     
+                        }
+                        
+                        document.querySelector('#app').prepend(newDay);
+                        
+                        oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
+                        oldDay.style.height = `${newDay.offsetHeight}px`;
+
+                        oldDay.addEventListener('animationend', () => {
+                            oldDay.remove();
+                        });
+                        
+                        dayBlock.ontouchstart = null;
+                        dayBlock.removeEventListener('touchmove', swipe);
+                        dayBlock.ontouchend = null;
+                        firstTouchX = null;
+                    }
+                }
+            }
+            dayBlock.addEventListener('touchmove', blockSwipe);
+            dayBlock.addEventListener('touchmove', swipe);
+        }
+        dayBlock.dayCount = dayCount;
         
+        // изменение заголоква lessons__title
+        let dayDesc;    
+        let betweenNowAndSelected = NOW.getDay() == 6 ? dayCount + 1 : NOW.getDay() == 0 ? dayCount : dayCount - NOW.getDay();
+
+        dayDesc =
+        betweenNowAndSelected === undefined ? 'Когда-то' :
+        betweenNowAndSelected === -3 || betweenNowAndSelected === -4 ? `${NOW.getDay() - dayCount} дня назад` :
+        betweenNowAndSelected === -2 ? 'Позавчера' :
+        betweenNowAndSelected === -1 ? 'Вчера' :
+        betweenNowAndSelected === 0 ? 'Сегодня' :
+        betweenNowAndSelected === 1 ? 'Завтра' :
+        betweenNowAndSelected === 2 ? 'Послезавтра' :
+        betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
+        `Через ${betweenNowAndSelected} дней`;
+
+        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>`;
+        
+        // если не завезли объект с парами, то наполнение lessons - только один элемент lesson с классом-модификатором lesson_error
+        if(!week){
+            let errorElem = document.createElement('div');
+            errorElem.classList.add('lesson_error', 'lesson');
+            errorElem.innerHTML = 'Извините, произошла ошибка'
+            dayBlock.querySelector('.lessons__content').append(errorElem);
+            
+            return dayBlock
+        }
+
         let currentWeekColor = getCurentWeekColor() === RED ? 'RED' : 'BLUE';
+        
+        let currentDay = week[DAYS[dayCount]];
 
         let lessonsCount = 0;
         for(lesson of currentDay){
             if(lesson[currentWeekColor] || lesson.title) lessonsCount++;
         }
 
-        let lessonsCountPhrase = lessonsCount + `${lessonsCount == 0 ? ' пар' : lessonsCount == 1 ? ' пара' : ' пары'}`;
+        let lessonsCountPhrase = ', ' +lessonsCount + `${lessonsCount == 0 ? ' пар' : lessonsCount == 1 ? ' пара' : ' пары'}`;
         
-        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>, ${lessonsCountPhrase}`;
+        dayBlock.querySelector('.lessons__title').innerHTML += lessonsCountPhrase ? lessonsCountPhrase : '';
     
         // заполнение расписанием - создание карточек с парами
         for (let i = 0; i < currentDay.length; i++) {
@@ -244,101 +332,47 @@ async function loadLessons(groupeName){
         // обработка свайпа
 
         // событие начала касания экрана
-        dayBlock.ontouchstart = () => {
-            let firstTouchX;
-            let firstTouchY;
-            // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
-            const MIN_X_CHANGE = 25;  
-            
-            let blockSwipe = evt => {
-                if(!firstTouchY)
-                    firstTouchY = evt.changedTouches[0].pageY;  
-                    
-                if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > 30){
-                    firstTouchY = null;
-                    dayBlock.removeEventListener('touchmove', swipe);
-                }
-            }
-
-            let swipe = evt => {
-                if(!firstTouchX)
-                    firstTouchX = evt.changedTouches[0].pageX;  
-                
-                if(Math.abs(firstTouchX - evt.changedTouches[0].pageX) > MIN_X_CHANGE){
-                    if(firstTouchX < evt.changedTouches[0].pageX)
-                        dayBlock.style.right = `${((firstTouchX + MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
-                    else
-                        dayBlock.style.right = `${((firstTouchX - MIN_X_CHANGE - evt.changedTouches[0].pageX) / 1.3)}px`;
-
-                    dayBlock.removeEventListener('touchmove', blockSwipe);
-
-                    // если firstTouchX больше, показываем следующий день
-                    dayBlock.ontouchend = () => {                        
-                        let previousDayCount = dayCount -1 === 0 ? 5 : dayCount-1;
-                        let nextDayCount = dayCount + 1 === 6 ? 1 : dayCount+1;
-                        
-                        let selectedDay;
-                        for(weekDay of weekDays){
-                            if(weekDay.isHightLight)
-                                selectedDay = weekDay;  
-                        }
-                        let newDay;
-                        let oldDay = dayBlock;
-                        
-                        oldDay.classList = 'lessons'; // сбрасываем классы предыдущего дня
-                        oldDay.classList.add('lessons_dropOld');
-                        
-                        if(firstTouchX < evt.changedTouches[0].pageX){
-                            
-                            newDay = loadDay(previousDayCount, groupeName);
-                            newDay.classList.add('lessons_insertNew');
-                            setBgAndColor(selectedDay, '100%', '50%', BLACK);
-                            setBgAndColor(weekDays[previousDayCount - 1]);
-                            
-                            oldDay.style.animationName = 'dropLessonsRight';
-                            newDay.style.animationName = 'insertLessonsRight';
-                        }else{
-                            
-                            newDay = loadDay(nextDayCount, groupeName);
-                            newDay.classList.add('lessons_insertNew');
-                            
-                            setBgAndColor(selectedDay, '0%', '50%', BLACK);
-                            setBgAndColor(weekDays[nextDayCount - 1], '50%', '100%');
-                            
-                            oldDay.style.animationName = 'dropLessonsLeft';
-                            newDay.style.animationName = 'insertLessonsLeft';     
-                        }
-                        
-                        document.querySelector('.main__title').after(newDay);
-                        
-                        oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
-                        oldDay.style.height = `${newDay.offsetHeight}px`;
-
-                        oldDay.addEventListener('animationend', () => {
-                            oldDay.remove();
-                        });
-                        
-                        dayBlock.ontouchstart = null;
-                        dayBlock.removeEventListener('touchmove', swipe);
-                        dayBlock.ontouchend = null;
-                        firstTouchX = null;
-                    }
-                }
-            }
-            dayBlock.addEventListener('touchmove', blockSwipe);
-            dayBlock.addEventListener('touchmove', swipe);
-        }
-        dayBlock.dayCount = dayCount;
+        
 
         selectCurrentLesson(dayBlock);
         
         return dayBlock;    
     }
+    document.querySelector('.main__title').innerHTML = 'Расписание';
+
+    let screen = document.querySelector('#app');
+    screen.innerHTML = `
+    <div class="week-color"><h4 class="week-color__text"></h4><div class="week-color__underline"></div></div>
+    <div class="week-days">
+    <span class="week-days__day">Пн</span>
+    <span class="week-days__day">Вт</span>
+    <span class="week-days__day">Ср</span>
+    <span class="week-days__day">Чт</span>
+    <span class="week-days__day">Пт</span>
+    </div>`
+    
     
     let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
+    let week;
+
     
+    let emptyLessons = document.createElement('div');
+    emptyLessons.classList.add('lessons', 'lessons_loading'); // пока грузится расписание, пользователь видит пустой контейнер пар (lessons), с класом-модификатором lessons_loading
+    document.querySelector('#app').prepend(emptyLessons);
+
+    getWeek(groupeName).then(async (res, rej) =>{
+        if(emptyLessons) emptyLessons.remove();
+        
+        if(rej || !res.ok) {
+            document.querySelector('#app').prepend(loadDay(nowDay)); // если произойдет ошибка, отработает неблагоприятный вариант в loadDay (там написано)
+            return
+        };
+        
+        week = await res.json();
+            
+        document.querySelector('#app').prepend(loadDay(nowDay));
+    });
     // загрузка карточки с парами для сегодняшнего дня
-    document.querySelector('.main__title').after(loadDay(nowDay));
 
     let weekDays = document.querySelectorAll('.week-days__day'); // кнопки дней
 
@@ -395,7 +429,7 @@ async function loadLessons(groupeName){
                         newDay.style.animationName = 'insertLessonsLeft'; 
                     }
 
-                    document.querySelector('.main__title').after(newDay);
+                    document.querySelector('#app').prepend(newDay);
 
                     oldDay.style.top = `${newDay.getBoundingClientRect().top + pageYOffset}px`;
                     oldDay.style.height = `${newDay.offsetHeight}px`;
@@ -445,14 +479,23 @@ function selectCurrentLesson(lessonsElem){
 
 // когда документ полностью загрузился
 document.addEventListener('DOMContentLoaded', async () => {
+    let themeColorTag = document.createElement('meta');
+    themeColorTag.setAttribute('name', 'theme-color');
+    themeColorTag.setAttribute('content', MAIN_COLOR);
+    document.head.append(themeColorTag)
+
     document.documentElement.style.setProperty('--main-color', MAIN_COLOR); // магия происходит тут, я задаю CSS переменную, у которой значение определено в JS
     document.documentElement.style.setProperty('--black-color', BLACK);
     document.documentElement.style.setProperty('--white-color', WHITE);
     document.documentElement.style.setProperty('--lgrey-color', LGREY);
+
+    // Подгрузка цветов для navbar
+    document.querySelector('.navbar_notification').style.stroke = GREY;
+    document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
+    document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
     
     let groupes = await getGroupes();
 
-    console.log(StyleSheet.title);
     // если ничего про группы не было сохранено, предлагаем выбрать
     if(!localStorage.groupe){
         let groupesElement = document.createElement('div');
@@ -511,54 +554,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadLessons(localStorage.groupe);
     }
 
+    
     document.querySelector('#nav_n').addEventListener('click', async () => {
         if (activeTab === 'notifications') return;
-
+        
+        document.querySelector('.main__title').innerHTML = 'Уведомления';
+        
         document.querySelector('#app').innerHTML = '';
 
         let notificationsCont = document.createElement('div');
         notificationsCont.className = 'notifications__container';
-        notificationsCont.innerHTML = '<h2 class="notifications__title">Уведомления</h2>';
 
         const notificationsArray = await getNotificationsArray();
 
         notificationsArray.forEach(n => {
             const notification = document.createElement('div');
             notification.className = 'notification';
-            
-            if(n.type === 'change') {
+
+            if (n.type === 'change') {
                 notification.innerHTML = `
                 <div class="notifications__content">
-                    <p class="notitfication__title">${n.title}</p>
-                    <table>
-                        <tr>
-                            <td>${n.body.count} пара</td>
-                            <td>${n.body.was.title}</td>
-                        </tr>
-                        <tr>
-                            <td>${n.body.count} пара</td>
-                            <td>${n.body.became.title} </td>
-                            <td>${n.body.became.aud} </td>
-                        </tr>
-                    </table>
+                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.title}:</h3>
+                    <div class="notifications_info">
+                        <div class="lesson_was">
+                            <span>${n.body.count} пара</span>
+                            <span>${n.body.was.title}</span>
+                        </div>
+                        <div class="lesson_became">
+                            <span>${n.body.count} пара</span>
+                            <div>
+                                <span>${n.body.became.title} </span>
+                                <p class="aud_became">${n.body.became.aud} </p>
+                            </div>
+                        </div>
+                    </div>
                 </div>`;
-            } else if(n.type === 'curator') {
+            } else if (n.type === 'curator') {
                 notification.innerHTML = `
                 <div class="notifications__content">
-                    <p class="notitfication__title">${n.title}</p>
-                    <p class="notification__content">
-                    ${n.body.text}
-                    </p>
-                    <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                    <div class="notifications_info">
+                        <p class="notification__content">${n.body.text}</p>
+                    </div>   
                 </div>`;
-            } else if(n.type === 'teacher') {
+            } else if (n.type === 'teacher') {
                 notification.innerHTML = `
                 <div class="notifications__content">
-                    <p class="notitfication__title">${n.title}</p>
-                    <p class="notification__content">
-                    ${n.body.text}
-                    </p>
-                    <p class="notification__sender">Сообщил(-а): ${n.body.sender}</p>
+                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                    <div class="notifications_info">
+                        <p class="notification__content">${n.body.text}</p>
+                    <div/>
                 </div>`;
             }
 
@@ -567,27 +612,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelector('#app').append(notificationsCont);
 
         activeTab = 'notifications';
+        document.querySelector('.navbar_notification').style.stroke = MAIN_COLOR;
+        document.querySelector('.navbar_lessons').style.stroke = GREY;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY)
     })
-    
-    document.querySelector('#nav_l').onclick = () =>{
-        if (activeTab === 'lessons') return;
 
+    document.querySelector('#nav_l').onclick = () => {
+        if (activeTab === 'lessons') return;
+        
         document.querySelector('#app').innerHTML = '';
         loadLessons(localStorage.groupe);
-
+        
         activeTab = 'lessons';
+        document.querySelector('.navbar_notification').style.stroke = GREY;
+        document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
     }
 
     //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
     document.querySelector('#nav_s').addEventListener('click', () => {
         if (activeTab === 'settings') return;
 
+        document.querySelector('.main__title').innerHTML = 'Настройки';
+
         document.querySelector('#app').innerHTML = '';
 
         let settingsCont = document.createElement('div');
         settingsCont.className = 'settings'
 
-        settingsCont.innerHTML = `<h2 class="settings__title">Настройки</h2>
+        settingsCont.innerHTML = `
         <div class="settings__content">
         <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
             <label class="groupes__form-title" for="form">Введите новую группу</label>
@@ -598,21 +651,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         </form>
         </div>`;
         document.querySelector('#app').append(settingsCont)
-        
+
         document.querySelector('.submit').onclick = () => {
-            
+
             let groupeIs = false;
-            for(groupeName of groupes){
-                if(document.forms.groupe.form.value.toUpperCase() == groupeName) groupeIs = true;
+            for (groupeName of groupes) {
+                if (document.forms.groupe.form.value.toUpperCase() == groupeName) groupeIs = true;
             }
-            
-            if(groupeIs){
+
+            if (groupeIs) {
                 let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
 
                 localStorage.groupe = currentGroupeName;
                 window.location.reload();
             }
-            else{
+            else {
                 document.querySelector('.form').style.borderColor = 'red';
                 setTimeout(() => {
                     document.querySelector('.form').style.borderColor = MAIN_COLOR;
@@ -621,14 +674,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         activeTab = 'settings';
+        document.querySelector('.navbar_notification').style.stroke = GREY;
+        document.querySelector('.navbar_lessons').style.stroke = GREY;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = MAIN_COLOR)
     })
 
     
     // определяем высоту приложение на весь доступный экран
-    document.body.style.height = `${window.innerHeight-1}px`;
-    document.querySelector('#app').style.height = `${window.innerHeight-1 - document.querySelector('.navbar').offsetHeight}px`;
+    document.body.style.height = `${window.innerHeight - 1}px`;
+    document.querySelector('#app').style.height = `${document.body.offsetHeight - document.querySelector('.navbar').offsetHeight - document.querySelector('.main__title').offsetHeight}px`;
     window.addEventListener('resize', () => {
         document.body.style.height = `${window.innerHeight-1}px`;
-        document.querySelector('#app').style.height = `${window.innerHeight-1 - document.querySelector('.navbar').offsetHeight}px`;
+        document.querySelector('#app').style.height = `${document.body.offsetHeight - document.querySelector('.navbar').offsetHeight - document.querySelector('.main__title').offsetHeight}px`;
     })
 })
