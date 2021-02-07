@@ -557,6 +557,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     document.querySelector('#nav_n').addEventListener('click', async () => {
         if (activeTab === 'notifications') return;
+
+        activeTab = 'notifications';
+        document.querySelector('.navbar_notification').style.stroke = MAIN_COLOR;
+        document.querySelector('.navbar_lessons').style.stroke = GREY;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
         
         document.querySelector('.main__title').innerHTML = 'Уведомления';
         
@@ -621,28 +626,30 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         document.querySelector('#app').append(notificationsCont);
 
-        activeTab = 'notifications';
-        document.querySelector('.navbar_notification').style.stroke = MAIN_COLOR;
-        document.querySelector('.navbar_lessons').style.stroke = GREY;
-        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY)
     })
 
     document.querySelector('#nav_l').onclick = () => {
         if (activeTab === 'lessons') return;
-        
-        document.querySelector('#app').innerHTML = '';
-        loadLessons(localStorage.groupe);
-        
+
         activeTab = 'lessons';
         document.querySelector('.navbar_notification').style.stroke = GREY;
         document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
         document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
+        
+        document.querySelector('#app').innerHTML = '';
+        loadLessons(localStorage.groupe);
+        
     }
-
+    
     //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
     document.querySelector('#nav_s').addEventListener('click', () => {
         if (activeTab === 'settings') return;
-
+        
+        activeTab = 'settings';
+        document.querySelector('.navbar_notification').style.stroke = GREY;
+        document.querySelector('.navbar_lessons').style.stroke = GREY;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = MAIN_COLOR)
+        
         document.querySelector('.main__title').innerHTML = 'Настройки';
 
         document.querySelector('#app').innerHTML = '';
@@ -683,10 +690,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
-        activeTab = 'settings';
-        document.querySelector('.navbar_notification').style.stroke = GREY;
-        document.querySelector('.navbar_lessons').style.stroke = GREY;
-        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = MAIN_COLOR)
     })
 
     
