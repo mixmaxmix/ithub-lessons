@@ -1,7 +1,7 @@
 [{
     "title": "Изменился преподаватель",
     "type": "change",
-    "importance": "hight", 
+    "importance": "high", 
     "body": {
         "was": {
             "title": "Физическая культура",

@@ -24,9 +24,9 @@ async function getGroupes(){
     return response.json();
 }
 // notification - массив объектов уведомлений
-async function getNotificationsArray(){
-    let response = await fetch(`sourses/notification/2P2_notifications.json`);
-    return response.json();
+async function getNotificationsArray(groupe){
+    let response = await fetch(`sourses/notification/${groupe}_notifications.json`);
+    return response;
 }
 
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
@@ -565,50 +565,60 @@ document.addEventListener('DOMContentLoaded', async () => {
         let notificationsCont = document.createElement('div');
         notificationsCont.className = 'notifications__container';
 
-        const notificationsArray = await getNotificationsArray();
+        let notificationsArray = [];
+        const notificationsResponse = await getNotificationsArray(localStorage.groupe);
+        if(notificationsResponse.ok){
+            notificationsArray = await notificationsResponse.json();
+        }
 
-        notificationsArray.forEach(n => {
-            const notification = document.createElement('div');
-            notification.className = 'notification';
-
-            if (n.type === 'change') {
-                notification.innerHTML = `
-                <div class="notifications__content">
-                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.title}:</h3>
-                    <div class="notifications_info">
-                        <div class="lesson_was">
-                            <span>${n.body.count} пара</span>
-                            <span>${n.body.was.title}</span>
-                        </div>
-                        <div class="lesson_became">
-                            <span>${n.body.count} пара</span>
-                            <div>
-                                <span>${n.body.became.title} </span>
-                                <p class="aud_became">${n.body.became.aud} </p>
+        // если нет уведомлений, отрабатывает else
+        if(notificationsArray.length != 0){
+            notificationsArray.forEach(n => {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+    
+                if (n.type === 'change') {
+                    notification.innerHTML = `
+                    <div class="notifications__content">
+                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.title}:</h3>
+                        <div class="notifications_info">
+                            <div class="lesson_was">
+                                <span>${n.body.count} пара</span>
+                                <span>${n.body.was.title}</span>
+                            </div>
+                            <div class="lesson_became">
+                                <span>${n.body.count} пара</span>
+                                <div>
+                                    <span>${n.body.became.title} </span>
+                                    <p class="aud_became">${n.body.became.aud} </p>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>`;
-            } else if (n.type === 'curator') {
-                notification.innerHTML = `
-                <div class="notifications__content">
-                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
-                    <div class="notifications_info">
-                        <p class="notification__content">${n.body.text}</p>
-                    </div>   
-                </div>`;
-            } else if (n.type === 'teacher') {
-                notification.innerHTML = `
-                <div class="notifications__content">
-                    <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
-                    <div class="notifications_info">
-                        <p class="notification__content">${n.body.text}</p>
-                    <div/>
-                </div>`;
-            }
-
-            notificationsCont.append(notification);
-        })
+                    </div>`;
+                } else if (n.type === 'curator') {
+                    notification.innerHTML = `
+                    <div class="notifications__content">
+                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                        <div class="notifications_info">
+                            <p class="notification__content">${n.body.text}</p>
+                        </div>   
+                    </div>`;
+                } else if (n.type === 'teacher') {
+                    notification.innerHTML = `
+                    <div class="notifications__content">
+                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                        <div class="notifications_info">
+                            <p class="notification__content">${n.body.text}</p>
+                        <div/>
+                    </div>`;
+                }
+    
+                notificationsCont.append(notification);
+            })
+        }else{
+            notificationsCont.innerHTML = 'Уведомлений нет';
+        }
+        
         document.querySelector('#app').append(notificationsCont);
 
         activeTab = 'notifications';
