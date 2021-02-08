@@ -33,15 +33,16 @@ const DAYS = ['понедельник', 'понедельник', 'вторни�
 const NOW = new Date(Date.now());
 const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
 const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 0), NOW.setHours(20, 40)]; // времена начала пар, в дальнейшем будут лежать на сервере
-const DURATION = 400; // количество ms для длительности анимаций
+const DURATION = 370; // количество ms для длительности анимаций
 
 // цвета
+const COLORS = ['#8061DA', '#6BAF5F', '#6180DA', '#FABC58', '#DB4065', '#23BC8E']
 const BLUE = '#5577D7';
 const RED = '#FF5157';
 const LGREY = '#F4F6F7';
 const BLACK = '#313131';
 const WHITE = '#FFFFFF';
-const MAIN_COLOR = '#7D14F3';
+let MAIN_COLOR = COLORS[getRnd(0, COLORS.length)];
 const GREY = '#C0C1C2';
 
 let activeTab = 'lessons';
@@ -390,7 +391,7 @@ async function loadLessons(groupeName){
     }
 
     // добавление обработчика нажатия на кнопки дней
-    for (let i = 0; i < weekDays.length; i++) {
+    for(let i = 0; i < weekDays.length; i++) {
         setBgAndColor(weekDays[i], '0%', '0%', BLACK);
 
         // выделение сегодняшнего дня в рамку
@@ -488,6 +489,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.documentElement.style.setProperty('--black-color', BLACK);
     document.documentElement.style.setProperty('--white-color', WHITE);
     document.documentElement.style.setProperty('--lgrey-color', LGREY);
+    document.documentElement.style.setProperty('--duration', DURATION + 'ms');
 
     // Подгрузка цветов для navbar
     document.querySelector('.navbar_notification').style.stroke = GREY;
@@ -644,7 +646,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
     document.querySelector('#nav_s').addEventListener('click', () => {
         if (activeTab === 'settings') return;
-        
+
         activeTab = 'settings';
         document.querySelector('.navbar_notification').style.stroke = GREY;
         document.querySelector('.navbar_lessons').style.stroke = GREY;

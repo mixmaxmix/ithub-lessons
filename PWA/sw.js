@@ -1,4 +1,4 @@
-let staticVersion = '1.2';
+let staticVersion = '1.3';
 let staticName = 'static-v' + staticVersion;
 let dynamicName = 'dynamic-v' + staticVersion;
 
