@@ -222,3 +222,22 @@
       transform: translatex(0);
     }
   }
+
+@-webkit-keyframes grdAiguille{
+    0%{-webkit-transform:rotate(0deg);}
+    100%{-webkit-transform:rotate(360deg);}
+}
+@keyframes grdAiguille{
+    0%{transform:rotate(0deg);}
+    100%{transform:rotate(360deg);}
+}
+
+@-webkit-keyframes ptAiguille{
+  0%{-webkit-transform:rotate(0deg);}
+  100%{-webkit-transform:rotate(360deg);}
+}
+
+@keyframes ptAiguille{
+  0%{transform:rotate(0deg);}
+  100%{transform:rotate(360deg);}
+}

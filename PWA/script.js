@@ -36,13 +36,13 @@ const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14,
 const DURATION = 370; // количество ms для длительности анимаций
 
 // цвета
-const COLORS = ['#8061DA', '#6BAF5F', '#6180DA', '#FABC58', '#DB4065', '#23BC8E']
+const COLORS = ['#FABC58', '#8061DA', '#6BAF5F', '#6180DA', '#DB4065', '#23BC8E']
 const BLUE = '#5577D7';
 const RED = '#FF5157';
 const LGREY = '#F4F6F7';
 const BLACK = '#313131';
 const WHITE = '#FFFFFF';
-let MAIN_COLOR = COLORS[getRnd(0, COLORS.length)];
+let MAIN_COLOR;
 const GREY = '#C0C1C2';
 
 let activeTab = 'lessons';
@@ -65,6 +65,7 @@ function getCurentWeekColor(){
 
 // функция, которая загружает весь интерфейс расписания
 async function loadLessons(groupeName){
+    document.querySelector('.navbar').style.visibility = 'visible'
     function loadDay(dayCount) {
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
@@ -341,8 +342,7 @@ async function loadLessons(groupeName){
     }
     document.querySelector('.main__title').innerHTML = 'Расписание';
 
-    let screen = document.querySelector('#app');
-    screen.innerHTML = `
+    document.querySelector('#app').innerHTML = `
     <div class="week-color"><h4 class="week-color__text"></h4><div class="week-color__underline"></div></div>
     <div class="week-days">
     <span class="week-days__day">Пн</span>
@@ -358,20 +358,38 @@ async function loadLessons(groupeName){
 
     
     let emptyLessons = document.createElement('div');
-    emptyLessons.classList.add('lessons', 'lessons_loading'); // пока грузится расписание, пользователь видит пустой контейнер пар (lessons), с класом-модификатором lessons_loading
+    emptyLessons.classList.add('lessons'); // пока грузится расписание, пользователь видит пустой контейнер пар (lessons), с класом-модификатором lessons_loading
+    
+    let emptyLessonsTitle = document.createElement('h3');
+    emptyLessonsTitle.innerText = 'Загрузка...';
+    emptyLessonsTitle.className = 'lessons__title';
+    emptyLessons.append(emptyLessonsTitle);
+
+    let emptyLessonsContent = document.createElement('div');
+    emptyLessonsContent.className = 'lessons__loading';
+    emptyLessons.append(emptyLessonsContent);
+
+    let emptyLessonsLoading = document.createElement('div');
+    emptyLessonsLoading.className = 'lessons__loading-anim';
+    emptyLessonsContent.append(emptyLessonsLoading);
+    
+    setTimeout(() => {emptyLessonsLoading.style.width = `${emptyLessonsContent.querySelector('.lessons__loading-anim').offsetHeight}px`}, 0)
+    
     document.querySelector('#app').prepend(emptyLessons);
 
     getWeek(groupeName).then(async (res, rej) =>{
-        if(emptyLessons) emptyLessons.remove();
-        
-        if(rej || !res.ok) {
-            document.querySelector('#app').prepend(loadDay(nowDay)); // если произойдет ошибка, отработает неблагоприятный вариант в loadDay (там написано)
-            return
-        };
-        
-        week = await res.json();
+        if(activeTab === 'lessons'){
+            if(emptyLessons) emptyLessons.remove();
             
-        document.querySelector('#app').prepend(loadDay(nowDay));
+            if(rej || !res.ok) {
+                document.querySelector('#app').prepend(loadDay(nowDay)); // если произойдет ошибка, отработает неблагоприятный вариант в loadDay (там написано)
+                return
+            };
+            
+            week = await res.json();
+                
+            document.querySelector('#app').prepend(loadDay(nowDay));
+        }
     });
     // загрузка карточки с парами для сегодняшнего дня
 
@@ -480,6 +498,9 @@ function selectCurrentLesson(lessonsElem){
 
 // когда документ полностью загрузился
 document.addEventListener('DOMContentLoaded', async () => {
+    // MAIN_COLOR = COLORS[getRnd(0, COLORS.length-1)];
+    MAIN_COLOR = COLORS[0];
+
     let themeColorTag = document.createElement('meta');
     themeColorTag.setAttribute('name', 'theme-color');
     themeColorTag.setAttribute('content', MAIN_COLOR);
@@ -500,6 +521,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // если ничего про группы не было сохранено, предлагаем выбрать
     if(!localStorage.groupe){
+        document.querySelector('.navbar').style.visibility = 'hidden'
         let groupesElement = document.createElement('div');
         groupesElement.className = 'groupes';
         groupesElement.innerHTML = `
@@ -556,30 +578,44 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadLessons(localStorage.groupe);
     }
 
+    // расписание
+    document.querySelector('#nav_l').onclick = () => {
+        if (activeTab === 'lessons') return;
+        document.querySelector('#app').innerHTML = '';
+
+        activeTab = 'lessons';
+        document.querySelector('.navbar_notification').style.stroke = GREY;
+        document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
+        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
+        
+        loadLessons(localStorage.groupe);
+        
+    }
     
+    // уведомления
     document.querySelector('#nav_n').addEventListener('click', async () => {
         if (activeTab === 'notifications') return;
+        document.querySelector('#app').innerHTML = '';
 
         activeTab = 'notifications';
         document.querySelector('.navbar_notification').style.stroke = MAIN_COLOR;
         document.querySelector('.navbar_lessons').style.stroke = GREY;
         document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
         
-        document.querySelector('.main__title').innerHTML = 'Уведомления';
         
-        document.querySelector('#app').innerHTML = '';
-
+        
         let notificationsCont = document.createElement('div');
         notificationsCont.className = 'notifications__container';
-
+        
         let notificationsArray = [];
         const notificationsResponse = await getNotificationsArray(localStorage.groupe);
         if(notificationsResponse.ok){
             notificationsArray = await notificationsResponse.json();
         }
-
+        
         // если нет уведомлений, отрабатывает else
         if(notificationsArray.length != 0){
+            document.querySelector('.main__title').innerHTML = 'Уведомления';
             notificationsArray.forEach(n => {
                 const notification = document.createElement('div');
                 notification.className = 'notification';
@@ -623,27 +659,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                 notificationsCont.append(notification);
             })
         }else{
-            notificationsCont.innerHTML = 'Уведомлений нет';
+            document.querySelector('.main__title').innerHTML = 'Уведомлений нет'
+            
+            notificationsCont.classList.add('notifications_empty');
         }
         
         document.querySelector('#app').append(notificationsCont);
 
     })
-
-    document.querySelector('#nav_l').onclick = () => {
-        if (activeTab === 'lessons') return;
-
-        activeTab = 'lessons';
-        document.querySelector('.navbar_notification').style.stroke = GREY;
-        document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
-        document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
-        
-        document.querySelector('#app').innerHTML = '';
-        loadLessons(localStorage.groupe);
-        
-    }
     
-    //добавление настроек, они тоже показываются поверх невидимых элементов на абсолютной позиции
+    // настройки
     document.querySelector('#nav_s').addEventListener('click', () => {
         if (activeTab === 'settings') return;
 

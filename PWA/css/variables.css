@@ -2,6 +2,7 @@
     --main-color:#fabc58; /*для дефолта, но на самом деле определяется в JS*/
     --white-color:#fff;
     --lgrey-color: #f4f6f7;
+    --grey-color: #C0C1C2;
     --black-color: #313131;
 
     --duration: .37s;

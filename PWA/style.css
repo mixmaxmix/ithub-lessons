@@ -93,6 +93,48 @@ html{
   position: relative;
   animation: insertLessons var(--duration) ease;
 }
+.lessons__loading{
+  width: 100%;
+  height: 100%;
+  padding-bottom: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.lessons__loading-anim{
+	border-radius: 50%;
+	border: 8px solid var(--lgrey-color);
+	height: 80%;
+	position: relative;
+}
+.lessons__loading-anim:after{
+	content: "";
+	position: absolute;
+	background-color: var(--lgrey-color);
+	top: 2.5%;
+	left: 48%;
+	height: 47.5%;
+	width: 5%;
+	border-radius: 5px;
+	-webkit-transform-origin: 50% 97%;
+			transform-origin: 50% 97%;
+	-webkit-animation: grdAiguille 2s linear infinite;
+			animation: grdAiguille 2s linear infinite;
+}
+.lessons__loading-anim:before{
+  content: "";
+  position: absolute;
+  background-color:var(--lgrey-color);
+  top: 7.5%;
+  left: 48%;
+  height: 43.75%;
+  width: 5%;
+  border-radius: 5px;
+  -webkit-transform-origin: 50% 94%;
+      transform-origin: 50% 94%;
+  -webkit-animation: ptAiguille 12s linear infinite;
+      animation: ptAiguille 12s linear infinite;
+}
 
 
 
@@ -348,7 +390,6 @@ html{
   width: 90vw;
   max-height: 80vh;
   box-sizing: border-box;
-  margin-top: 12vh;
   position: absolute;
   right: var(--pad_aside);
 }
@@ -433,6 +474,10 @@ html{
   border-radius: 4px;
   font-size: 0.9em;
 }
+
+
+
+
 .settings {
   width: 100%;
   height: 100%;
@@ -470,8 +515,15 @@ html{
 
 
 .notifications__container{
-  height: auto;
+  width: 100%;
+  min-height: 100%;
   /* overflow: auto; */
+}
+.notifications_empty{
+  background-image: url('./images/notifications_empty_bg.svg');
+  background-size: 50%;
+  background-position: center 30%;
+  background-repeat: no-repeat;
 }
 .notifications__content {
   background-color: #F4F6F7;

@@ -1,4 +1,4 @@
-let staticVersion = '1.3';
+let staticVersion = '1.31';
 let staticName = 'static-v' + staticVersion;
 let dynamicName = 'dynamic-v' + staticVersion;
 
@@ -18,6 +18,7 @@ const staticAssets = [
     './images/lessons.svg',
     './images/notification.svg',
     './images/settings.svg',
+    './images/notifications_empty_bg.svg',
     './app.js',
     './script.js',
     
@@ -26,7 +27,7 @@ const staticAssets = [
 self.addEventListener('install', async event => {
     const cache = await caches.open(staticName);
     await cache.addAll(staticAssets);
-    console.log('Service worker has been installed');
+    // console.log('Service worker has been installed');
 });
 
 self.addEventListener('activate', async event => {
@@ -37,11 +38,11 @@ self.addEventListener('activate', async event => {
         }
     });
     await Promise.all(checkKeys);
-    console.log('Service worker has been activated');
+    // console.log('Service worker has been activated');
 });
 
 self.addEventListener('fetch', event => {
-    console.log(`Trying to fetch ${event.request.url}`);
+    // console.log(`Trying to fetch ${event.request.url}`);
     event.respondWith(checkCache(event.request));
 });
 
