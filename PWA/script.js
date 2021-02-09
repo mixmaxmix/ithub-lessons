@@ -471,7 +471,6 @@ async function loadLessons(groupeName){
 
     // если есть блок с выбором группы, убиваем его, и даем всем элементам под ним быть видимыми
     if(document.querySelector('.groupes')){
-        document.body.querySelectorAll('*').forEach((elem) => {elem.style.visibility = 'visible';});
         document.querySelector('.groupes').remove();  
     }
 
@@ -530,7 +529,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <label class="groupes__form-title" for="form">Введите группу</label>
             <div class="btn-form">
                 <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
-                <button class="submit">></button>
+                <button class="submit">Войти</button>
             </div>
         </form>
         <div class="groupes__cont"> </div>`;
@@ -690,7 +689,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <label class="groupes__form-title" for="form">Введите новую группу</label>
             <div class="btn-form">
                 <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.groupe}"></input>
-                <button class="submit">></button>
+                <button class="submit">Сменить</button>
             </div>
         </form>
         </div>`;
