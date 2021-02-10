@@ -17,16 +17,16 @@ function hexToRgb(color) {
 // groupes - массив с назаваниями групп
 async function getWeek(groupe){
     let response = await fetch(`sourses/weeks/${groupe}_week.json`);
-    return response;
+    return response
 }
 async function getGroupes(){
     let response = await fetch(`sourses/groupes.json`);
-    return response.json();
+    return response.json()
 }
 // notification - массив объектов уведомлений
 async function getNotificationsArray(groupe){
     let response = await fetch(`sourses/notification/${groupe}_notifications.json`);
-    return response;
+    return response
 }
 
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
@@ -65,7 +65,6 @@ function getCurentWeekColor(){
 
 // функция, которая загружает весь интерфейс расписания
 async function loadLessons(groupeName){
-    document.querySelector('.navbar').style.visibility = 'visible'
     function loadDay(dayCount) {
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
@@ -340,6 +339,7 @@ async function loadLessons(groupeName){
         
         return dayBlock;    
     }
+    document.querySelector('.navbar').style.visibility = 'visible'
     document.querySelector('.main__title').innerHTML = 'Расписание';
 
     document.querySelector('#app').innerHTML = `
@@ -379,7 +379,8 @@ async function loadLessons(groupeName){
 
     getWeek(groupeName).then(async (res, rej) =>{
         if(activeTab === 'lessons'){
-            if(emptyLessons) emptyLessons.remove();
+            let lessonsElems = document.querySelectorAll('.lessons');
+            if(lessonsElems.length != 0) lessonsElems.forEach(elem => elem.remove())
             
             if(rej || !res.ok) {
                 document.querySelector('#app').prepend(loadDay(nowDay)); // если произойдет ошибка, отработает неблагоприятный вариант в loadDay (там написано)
