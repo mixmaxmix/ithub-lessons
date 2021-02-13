@@ -27,6 +27,7 @@ async function authorize() {
             fs.writeFileSync(path, JSON.stringify(arr));
     }
 
+    // функция для получения преподователей, групп и кабинетов
     async function getLessonsElems(list){
         properties.range = `'${list}'!A:A`
 
@@ -83,6 +84,8 @@ async function authorize() {
 
                 count++;
                 if(count > 7){
+                    // console.log(week);
+                    if(week['суббота'].length == 0) delete week['суббота'];
                     if(!group.includes('ОН')) fs.writeFileSync(`weeks/${group}_week.json`, JSON.stringify(week));
                     week = {'понедельник':[], 'вторник':[], 'среда':[], 'четверг':[], 'пятница':[], 'суббота': []};
                     count = 1;
@@ -100,13 +103,13 @@ async function authorize() {
                             let lesson;
                             if(cell){
                                 lesson = {};
-                                cell = cell.replace(/\s+/g, ' ').trim();
-                                for(groupForReplace of groupes){
+                                cell = cell.trim().replace(/\s+/g, ' ');
+                                for(let groupForReplace of groupes){
                                     cell = cell.replace(new RegExp(`\\s*${[].map.call(groupForReplace, (letter) => (letter === '+' ? '\\' + letter + '\\s*' : letter + '\\s*')).join('')}`, 'gi'), ' _g_ ');
                                 }
                                 
                                 // определение учителя
-                                for(teacher of teachers){
+                                for(let teacher of teachers){
                                     let [surname, initials] = teacher.split(' ');
                                     let surnameIsRepeated = 0;
                                     teachers.forEach(elem => {if(elem.includes(surname)) surnameIsRepeated++});
@@ -137,11 +140,14 @@ async function authorize() {
                                     }
                                 }
                                 let foundedAuds = [];
-                                for(cab of cabs){
+                                for(let cab of cabs){
                                     let [part1, part2] = cab.split(' ');
-                                    let cellCabs = cell.match(new RegExp((part2 === 'кабинет') ? `${part1}\\s*${[].map.call(part2, (letter) => (letter + '?')).join('')}` : `${part1}\\s*${part2}`,'gi'));
+                                    if(!part2) part2 = ''
+                                    let [part1OfPart2, part2OfPart2] = part2.split('.');
+                                    part2OfPart2 = part2OfPart2 ?  `\\s*[.ю,]\\s*${part2OfPart2}` : '';
+                                    let cellCabs = cell.match(new RegExp((part2 == 'кабинет') ? `${part1}\\s*к?а?б?и?н?е?т?` : `${part1}\\s*${part1OfPart2 ? part1OfPart2 : ''}${part2OfPart2}`,'gi'));
                                     if(cellCabs){
-                                        for(cellCab of cellCabs) cell = cell.replace(cellCab, ' _c_ ')
+                                        for(let cellCab of cellCabs) cell = cell.replace(cellCab, ' _c_ ')
                                         
                                         foundedAuds.push(cab);
                                     }
@@ -167,21 +173,31 @@ async function authorize() {
                             lessonToCollect = {};
                             if(currentCell.match(/\s*\+\s*/g)){
                                 let splittedCell = currentCell.split(/\s*\+\s*/g);
-                                for(piece of splittedCell){
+                                for(let piece of splittedCell){
+                                    // console.log(piece);
                                     let processedPiece = parseCell(piece);
-                                    if(processedPiece.title){    
-                                        if(!processedPiece.title.match(/^\s*$/)){
-                                            lessonToCollect.title = processedPiece.title;
+                                    if(processedPiece){
+                                        if(processedPiece.title){    
+                                            if(!processedPiece.title.match(/^\s*$/)){
+
+                                                lessonToCollect.title = processedPiece.title;
+                                            }
+                                        }
+                                        for(let prop in processedPiece){
+                                            if(prop !== 'title'){
+                                                if(processedPiece[prop].trim()){
+                                                    if(!lessonToCollect[prop]) 
+                                                        lessonToCollect[prop] = `${processedPiece[prop] ? processedPiece[prop] : ''}/`;
+                                                    else
+                                                        lessonToCollect[prop] += `${processedPiece[prop] ? processedPiece[prop] : ''}/`;    
+                                                }
+                                            }
                                         }
                                     }
-                                    for(prop of Object.keys(processedPiece)){
-                                        if(prop !== 'title'){
-                                            if(!lessonToCollect[prop]) 
-                                                lessonToCollect[prop] = `${processedPiece[prop] ? processedPiece[prop] : ''}/`;
-                                            else
-                                                lessonToCollect[prop] += `${processedPiece[prop] ? processedPiece[prop] : ''}/`;    
-                                        }
-                                    }
+                                }
+                                for(let prop in lessonToCollect){
+                                    lessonToCollect[prop] = lessonToCollect[prop].trim().split('/').join('/');
+                                    lessonToCollect[prop] = lessonToCollect[prop].replace(/\/$/, '');
                                 }
                             }else{
                                 lessonToCollect = parseCell(currentCell);
@@ -204,10 +220,16 @@ async function authorize() {
                     if(redRow[i]) lesson.RED = redRow[i];
                     if(blueRow[i]) lesson.BLUE = blueRow[i];
 
-                    if(lesson.RED && lesson.BLUE){
+                    if((lesson.RED && Object.keys(lesson.RED).length > 0) && (lesson.BLUE && Object.keys(lesson.BLUE).length > 0)){
                         let colorsIsSimilar = true;
+                        if(Object.keys(lesson.RED).length != Object.keys(lesson.BLUE).length){
+                            colorsIsSimilar = false;
+                            break
+                        }
+
                         for(let j = 0; j < Object.keys(lesson.RED).length; j++){
-                            if(lesson[Object.keys(lesson.RED)[j]] != lesson[Object.keys(lesson.BLUE)[j]]){
+                            // console.log(lesson.RED[Object.keys(lesson.RED)[j]] +' '+ lesson.BLUE[Object.keys(lesson.BLUE)[j]]);
+                            if(lesson.RED[Object.keys(lesson.RED)[j]] != lesson.BLUE[Object.keys(lesson.BLUE)[j]]){
                                 colorsIsSimilar = false;
                                 break
                             }
@@ -222,7 +244,7 @@ async function authorize() {
                         }
                     }
                     
-                    if(lesson.RED || lesson.BLUE || lesson.title) week[weekKeys[i]].push(lesson);
+                    if(lesson.RED || lesson.BLUE || (lesson.title && (lesson.place || lesson.aud))) week[weekKeys[i]].push(lesson);
                 }
             }
         }
@@ -232,5 +254,5 @@ async function authorize() {
         })
     }
 
-     getLessons('groupes');
+    getLessons('groupes');
 })()
