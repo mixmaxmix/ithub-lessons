@@ -1,4 +1,4 @@
-let staticVersion = '1.32';
+let staticVersion = '1.5';
 let staticName = 'static-v' + staticVersion;
 let dynamicName = 'dynamic-v' + staticVersion;
 
@@ -43,6 +43,7 @@ self.addEventListener('activate', async event => {
 
 self.addEventListener('fetch', event => {
     // console.log(`Trying to fetch ${event.request.url}`);
+    if(event.request.url.match(/.*google.*/)) return
     event.respondWith(checkCache(event.request));
 });
 

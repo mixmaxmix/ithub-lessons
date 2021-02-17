@@ -58,7 +58,9 @@
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
-        firebase.analytics();
+        if(!document.location.host.includes('127')){
+            firebase.analytics();
+        }
     </script>
 </body>
 </html>

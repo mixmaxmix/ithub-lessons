@@ -15,28 +15,36 @@ function hexToRgb(color) {
 
 // week - объект, где ключи - дни недели, а значения - массивы с парами, сгенерирован автоматически на основе таблицы с расписанием
 // groupes - массив с назаваниями групп
-async function getWeek(groupe){
-    let response = await fetch(`sourses/weeks/${groupe}_week.json`);
+async function getWeek(group){
+    let response = await fetch(`sources/weeks/${group}_week.json`);
+    // return new Promise((res) =>{
+    //     setTimeout(() =>{res(response)}, 2000)
+    // })
     return response
 }
 async function getGroupes(){
-    let response = await fetch(`sourses/groupes.json`);
+    let response = await fetch(`sources/groupes.json`);
     return response.json()
 }
 // notification - массив объектов уведомлений
-async function getNotificationsArray(groupe){
-    let response = await fetch(`sourses/notification/${groupe}_notifications.json`);
+async function getNotificationsArray(group){
+    let response = await fetch(`sources/notification/${group}_notifications.json`);
     return response
 }
 
 const DAYS = ['понедельник', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'понедельник'];
+// const NOW = new Date(Date.now());
 const NOW = new Date(Date.now());
 const TRUE_NOW = new Date(NOW); // копируем объект NOW, потому что потом для NOW изменяется время. Не использую везде просто Date.now(), потому что потом будем дату присылать с сервера возможно
 const START_TIMES = [NOW.setHours(10, 0), NOW.setHours(11, 40), NOW.setHours(14, 0), NOW.setHours(15, 40), NOW.setHours(17, 20), NOW.setHours(19, 0), NOW.setHours(20, 40)]; // времена начала пар, в дальнейшем будут лежать на сервере
 const DURATION = 370; // количество ms для длительности анимаций
 
 // цвета
-const COLORS = ['#FABC58', '#8061DA', '#6BAF5F', '#6180DA', '#DB4065', '#23BC8E']
+const COLORS = ['#FABC58', '#8061DA', '#6BAF5F', '#6180DA', '#DB4065', '#23BC8E'];
+const WEEK_COLORS = {
+    RED: '#FF5157',
+    BLUE: '#5577D7'
+}
 const BLUE = '#5577D7';
 const RED = '#FF5157';
 const LGREY = '#F4F6F7';
@@ -55,16 +63,16 @@ function getCurentWeekColor(){
 
     dateToProcess.setDate(NOW.getDate() + 4 - (NOW.getDay()||7));
     
-    let currentWeekColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? RED : BLUE;
+    let currentWeekColor = (Math.floor(((dateToProcess - currentYear) / 1000 / 60 /60 / 24 + 1) / 7) % 2) === 0 ? 'RED' : 'BLUE';
     if(NOW.getDay() == 6 || NOW.getDay() == 0){
-        currentWeekColor = currentWeekColor === RED ? BLUE : RED;
+        currentWeekColor = currentWeekColor === 'RED' ? 'BLUE' : 'RED';
     }
     
     return currentWeekColor;
 }
 
 // функция, которая загружает весь интерфейс расписания
-async function loadLessons(groupeName){
+async function loadLessonsScreen(groupName, currentWeekColor, firstDayCount = NOW.getDay()){
     function loadDay(dayCount) {
         let dayBlock = document.createElement('div');
         dayBlock.innerHTML = `
@@ -72,6 +80,8 @@ async function loadLessons(groupeName){
             <div class="lessons__content"></div>`;
         dayBlock.className = 'lessons';
 
+        // обработка свайпа
+        // событие начала касания экрана
         dayBlock.ontouchstart = () => {
             let firstTouchX;
             let firstTouchY;
@@ -118,7 +128,7 @@ async function loadLessons(groupeName){
                         
                         if(firstTouchX < evt.changedTouches[0].pageX){
                             
-                            newDay = loadDay(previousDayCount, groupeName);
+                            newDay = loadDay(previousDayCount, groupName);
                             newDay.classList.add('lessons_insertNew');
                             setBgAndColor(selectedDay, '100%', '50%', BLACK);
                             setBgAndColor(weekDays[previousDayCount - 1]);
@@ -127,7 +137,7 @@ async function loadLessons(groupeName){
                             newDay.style.animationName = 'insertLessonsRight';
                         }else{
                             
-                            newDay = loadDay(nextDayCount, groupeName);
+                            newDay = loadDay(nextDayCount, groupName);
                             newDay.classList.add('lessons_insertNew');
                             
                             setBgAndColor(selectedDay, '0%', '50%', BLACK);
@@ -159,7 +169,10 @@ async function loadLessons(groupeName){
         dayBlock.dayCount = dayCount;
         
         // изменение заголоква lessons__title
-        let dayDesc;    
+        let dayDesc; 
+        // if(getCurentWeekColor() !== currentWeekColor){
+        //     dayCount += 7
+        // }
         let betweenNowAndSelected = NOW.getDay() == 6 ? dayCount + 1 : NOW.getDay() == 0 ? dayCount : dayCount - NOW.getDay();
 
         dayDesc =
@@ -172,8 +185,12 @@ async function loadLessons(groupeName){
         betweenNowAndSelected === 2 ? 'Послезавтра' :
         betweenNowAndSelected === 3 || betweenNowAndSelected === 4 ? `Через ${betweenNowAndSelected} дня` :
         `Через ${betweenNowAndSelected} дней`;
-
-        dayBlock.querySelector('.lessons__title').innerHTML = dayDesc + ',&nbsp' + `<b> ${DAYS[dayCount]}</b>`;
+        dayDesc += ',&nbsp'
+        if(getCurentWeekColor() !== currentWeekColor){
+            // dayCount -= 7
+            dayDesc = (dayCount == 3 || dayCount == 5) ? 'Следующая&nbsp' : 'Следующий&nbsp'
+        }
+        dayBlock.querySelector('.lessons__title').innerHTML = (dayDesc + `<b> ${DAYS[dayCount]}</b>`);
         
         // если не завезли объект с парами, то наполнение lessons - только один элемент lesson с классом-модификатором lesson_error
         if(!week){
@@ -185,7 +202,6 @@ async function loadLessons(groupeName){
             return dayBlock
         }
 
-        let currentWeekColor = getCurentWeekColor() === RED ? 'RED' : 'BLUE';
         
         let currentDay = week[DAYS[dayCount]];
 
@@ -324,16 +340,64 @@ async function loadLessons(groupeName){
                         info.onclick = null;
                     })
                 }
-            }   
+            }
+            
+            infoContent.ontouchstart = () => {
+                infoContent.style.transition = 'none'
+                let firstTouchX;
+                let firstTouchY;
+                // обработка движения - у lessons релативная позиция, изменяем смешение вправо на разность первого касания и координаты текущего касания
+                const MIN_X_CHANGE = 15;  
+                
+                let blockSwipe = evt => {
+                    if(!firstTouchY)
+                        firstTouchY = evt.changedTouches[0].pageY;  
+                        
+                    if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > 30){
+                        firstTouchY = null;
+                        dayBlock.removeEventListener('touchmove', swipe);
+                    }
+                }
+    
+                let swipe = evt => {
+                    if(!firstTouchY)
+                        firstTouchY = evt.changedTouches[0].pageY;  
+                    
+                    if(Math.abs(firstTouchY - evt.changedTouches[0].pageY) > MIN_X_CHANGE){
+                        if(firstTouchY < evt.changedTouches[0].pageY)
+                            infoContent.style.bottom = `${((firstTouchY + MIN_X_CHANGE - evt.changedTouches[0].pageY) / 1.3)}px`;
+                        else
+                            // infoContent.style.bottom = `${((firstTouchY - MIN_X_CHANGE - evt.changedTouches[0].pageY) / 1.3)}px`;
+    
+                        infoContent.removeEventListener('touchmove', blockSwipe);
+    
+                        // если firstTouchX больше, показываем следующий день
+                        infoContent.ontouchend = () => {       
+                            firstTouchY = null;
+                            
+                            infoContent.style.transition = 'var(--duration) ease';
+                            // console.log(transitionTemp);                 
+                            infoContent.style.bottom = `-${infoContent.offsetHeight}px`;
+                            info.style.opacity = 0; 
+                            
+                            info.addEventListener('transitionend', () => {
+                                info.remove();
+                                infoContent.style.bottom = 0;
+                                info.style.opacity = 1;
+                                info.querySelector('.lesson-info__count').innerText = info.querySelector('.lesson-info__count').innerText.split(',')[0]
+            
+                                info.onclick = null;
+                            })
+                        }
+                    }
+                }
+                // infoContent.addEventListener('touchmove', blockSwipe);
+                infoContent.addEventListener('touchmove', swipe);
+            }
         }
     
         if(dayBlock.querySelector('.lessons__content').lastChild) // есть дни, когда нет пар, поэтому прежде чем удалять, проверяем
             dayBlock.querySelector('.lessons__content').lastChild.lastChild.style.display = 'none'; // удаление подчеркивания у последнего элемента
-        
-        // обработка свайпа
-
-        // событие начала касания экрана
-        
 
         selectCurrentLesson(dayBlock);
         
@@ -352,13 +416,12 @@ async function loadLessons(groupeName){
     <span class="week-days__day">Пт</span>
     </div>`
     
-    
-    let nowDay = NOW.getDay() === 6 || NOW.getDay() === 0 ? 1 : NOW.getDay(); // если сейчас выходные - выбрать понедельник
+    firstDayCount = firstDayCount === 6 || firstDayCount === 0 ? 1 : firstDayCount; // если сейчас выходные - выбрать понедельник
     let week;
 
     
     let emptyLessons = document.createElement('div');
-    emptyLessons.classList.add('lessons'); // пока грузится расписание, пользователь видит пустой контейнер пар (lessons), с класом-модификатором lessons_loading
+    emptyLessons.classList.add('lessons'); // пока грузится расписание, пользователь видит пустой контейнер пар (lessons), c загрузкой 
     
     let emptyLessonsTitle = document.createElement('h3');
     emptyLessonsTitle.innerText = 'Загрузка...';
@@ -366,7 +429,7 @@ async function loadLessons(groupeName){
     emptyLessons.append(emptyLessonsTitle);
 
     let emptyLessonsContent = document.createElement('div');
-    emptyLessonsContent.className = 'lessons__loading';
+    emptyLessonsContent.className = 'lessons__loading-content';
     emptyLessons.append(emptyLessonsContent);
 
     let emptyLessonsLoading = document.createElement('div');
@@ -377,19 +440,25 @@ async function loadLessons(groupeName){
     
     document.querySelector('#app').prepend(emptyLessons);
 
-    getWeek(groupeName).then(async (res, rej) =>{
+    getWeek(groupName).then(async (res, rej) =>{
         if(activeTab === 'lessons'){
-            let lessonsElems = document.querySelectorAll('.lessons');
-            if(lessonsElems.length != 0) lessonsElems.forEach(elem => elem.remove())
-            
-            if(rej || !res.ok) {
-                document.querySelector('#app').prepend(loadDay(nowDay)); // если произойдет ошибка, отработает неблагоприятный вариант в loadDay (там написано)
-                return
-            };
-            
-            week = await res.json();
+            emptyLessons.style.opacity = 0.5;
+            emptyLessons.ontransitionend = async () =>{
+                if(!rej && res.ok) {
+                    week = await res.json();
+                }
+                let lessonsElem = loadDay(firstDayCount);
+                lessonsElem.isTrueLessons = true;
+                lessonsElem.style.opacity = 0.5;
+
+                document.querySelector('#app').prepend(lessonsElem);
                 
-            document.querySelector('#app').prepend(loadDay(nowDay));
+                lessonsElem.style.opacity = 1;
+
+                let lessonsElems = document.querySelectorAll('.lessons');
+                if(lessonsElems.length != 0) lessonsElems.forEach(elem => {if(!elem.isTrueLessons) elem.remove()})
+                
+            }
         }
     });
     // загрузка карточки с парами для сегодняшнего дня
@@ -462,15 +531,28 @@ async function loadLessons(groupeName){
         })
     }
 
-    setBgAndColor(weekDays[nowDay - 1]);
+    setBgAndColor(weekDays[firstDayCount - 1]);
 
     //работа с элементом week-color
     let currentWeekColorElem = document.querySelector('.week-color');
-    currentWeekColorElem.style.color = getCurentWeekColor(); // функция описана выше
-    currentWeekColorElem.firstChild.innerText = getCurentWeekColor() == RED ? 'Красная неделя' : 'Синяя неделя';
-    currentWeekColorElem.lastChild.style.backgroundColor = getCurentWeekColor();
+    currentWeekColorElem.style.color = WEEK_COLORS[currentWeekColor];
+    if(currentWeekColor != getCurentWeekColor()){
+        currentWeekColorElem.firstChild.innerText = "Следующая неделя";
+    }else{
+        currentWeekColorElem.firstChild.innerText = currentWeekColor == 'RED' ? 'Красная неделя' : 'Синяя неделя';
+    }
+    currentWeekColorElem.lastChild.style.backgroundColor = WEEK_COLORS[currentWeekColor];
 
-    // если есть блок с выбором группы, убиваем его, и даем всем элементам под ним быть видимыми
+    document.querySelector('.week-color__text').addEventListener('click', () => {
+        let currentDayCount;
+        for(let i = 0; i < weekDays.length; i++){
+            if(weekDays[i].isHightLight)
+                currentDayCount = i;  
+        }
+        loadLessonsScreen(localStorage.group, currentWeekColor === 'RED' ? 'BLUE' : 'RED', currentDayCount+1)
+    });
+
+    // если есть блок с выбором группы, убиваем его
     if(document.querySelector('.groupes')){
         document.querySelector('.groupes').remove();  
     }
@@ -500,7 +582,7 @@ function selectCurrentLesson(lessonsElem){
 document.addEventListener('DOMContentLoaded', async () => {
     // MAIN_COLOR = COLORS[getRnd(0, COLORS.length-1)];
     MAIN_COLOR = COLORS[0];
-
+        
     let themeColorTag = document.createElement('meta');
     themeColorTag.setAttribute('name', 'theme-color');
     themeColorTag.setAttribute('content', MAIN_COLOR);
@@ -518,48 +600,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
     
     let groupes = await getGroupes();
+    let nowWeekColor = getCurentWeekColor(); 
+    
+    
 
     // если ничего про группы не было сохранено, предлагаем выбрать
-    if(!localStorage.groupe){
-        document.querySelector('.navbar').style.visibility = 'hidden'
+    if(!localStorage.group){
+        document.querySelector('.navbar').style.visibility = 'hidden'; // navbar убираем
+
         let groupesElement = document.createElement('div');
         groupesElement.className = 'groupes';
         groupesElement.innerHTML = `
         <h1 class="groupes__title">Добрый день</h1>
-        <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
-            <label class="groupes__form-title" for="form">Введите группу</label>
+        <form name="group" class="groupes__forms-cont" onsubmit="return false;">
+            <label class="groupes__form-title" for="form">Введите или выберите группу</label>
             <div class="btn-form">
                 <input class="form" name="form" type="text" placeholder="Например: ${groupes[getRnd(0, groupes.length-1)]}"></input>
                 <button class="submit">Войти</button>
             </div>
         </form>
-        <div class="groupes__cont"> </div>`;
+        <div class="groupes__cont"></div>
+        <div class="groupes__gradient"></div>`;
         
         document.querySelector('#app').append(groupesElement);
-        
-        for(groupeName of groupes){
-            let groupe = document.createElement('div');
-            groupe.className = 'groupes__groupe';
-            groupe.innerText = groupeName;
+
+        let groupes_cont = groupesElement.querySelector('.groupes__cont');
+        groupes_cont.style.gridTemplateRows = `repeat(${Math.ceil(groupes.length/5)}, 30px)`
+        for(groupName of groupes){
+            let group = document.createElement('div');
+            group.className = 'groupes__group';
+            group.innerText = groupName;
     
-            groupe.onclick = () =>{
-                loadLessons(groupe.innerText);
-                localStorage.groupe = groupe.innerText;
+            group.onclick = () => {
+                loadLessonsScreen(group.innerText, nowWeekColor);
+                localStorage.group = group.innerText;
             }
             
-            groupesElement.querySelector('.groupes__cont').append(groupe);
+            groupes_cont.append(group);
         }
         
+        groupes_cont.addEventListener('scroll', () => {
+            let maxScrollHeight = groupes_cont.scrollHeight - groupes_cont.offsetHeight;
+           groupesElement.querySelector('.groupes__gradient').style.backgroundPosition = `center ${Math.abs(100 - groupes_cont.scrollTop/maxScrollHeight*100)}%`;
+        })
+        
         document.querySelector('.submit').onclick = () => {
-            let groupeIs = false;
-            for(groupeName of groupes){
-                if(document.forms.groupe.form.value.toUpperCase() == groupeName)
-                    groupeIs = true;
+            let groupIs = false;
+            for(groupName of groupes){
+                if(document.forms.group.form.value.toUpperCase() == groupName)
+                    groupIs = true;
             }
-            if(groupeIs){
-                let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
-                loadLessons(currentGroupeName);
-                localStorage.groupe = currentGroupeName;
+            if(groupIs){
+                let currentGroupName = document.forms.group.form.value.toUpperCase();
+                loadLessonsScreen(currentGroupName, nowWeekColor);
+                localStorage.group = currentGroupName;
             }
             else{
                 document.querySelector('.form').style.borderColor = 'red';
@@ -575,7 +669,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // document.querySelectorAll('.groupes *').forEach((elem) => {elem.style.visibility = 'visible';}); 
 
     } else {
-        loadLessons(localStorage.groupe);
+        loadLessonsScreen(localStorage.group, nowWeekColor);
     }
 
     // расписание
@@ -588,7 +682,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.querySelector('.navbar_lessons').style.stroke = MAIN_COLOR;
         document.querySelectorAll('.navbar_settings').forEach(el => el.style.stroke = GREY);
         
-        loadLessons(localStorage.groupe);
+        loadLessonsScreen(localStorage.group, nowWeekColor);
         
     }
     
@@ -596,6 +690,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelector('#nav_n').addEventListener('click', async () => {
         if (activeTab === 'notifications') return;
         document.querySelector('#app').innerHTML = '';
+        document.querySelector('.main__title').innerHTML = 'Уведомления';
+
 
         activeTab = 'notifications';
         document.querySelector('.navbar_notification').style.stroke = MAIN_COLOR;
@@ -608,64 +704,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         notificationsCont.className = 'notifications__container';
         
         let notificationsArray = [];
-        const notificationsResponse = await getNotificationsArray(localStorage.groupe);
-        if(notificationsResponse.ok){
-            notificationsArray = await notificationsResponse.json();
-        }
+        getNotificationsArray(localStorage.group).then(async (res, rej) => {         
+            if(activeTab !== 'notifications') return; // если промис завершится когда вкладка уже переключена, ничего не произойдет
+            
+            if(res.ok && !rej) notificationsArray = await res.json();
+            
+            // если нет уведомлений, отрабатывает else
+            if(notificationsArray.length != 0){
+                notificationsArray.forEach(n => {
+                    const notification = document.createElement('div');
+                    notification.className = 'notification';
         
-        // если нет уведомлений, отрабатывает else
-        if(notificationsArray.length != 0){
-            document.querySelector('.main__title').innerHTML = 'Уведомления';
-            notificationsArray.forEach(n => {
-                const notification = document.createElement('div');
-                notification.className = 'notification';
-    
-                if (n.type === 'change') {
-                    notification.innerHTML = `
-                    <div class="notifications__content">
-                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.title}:</h3>
-                        <div class="notifications_info">
-                            <div class="lesson_was">
-                                <span>${n.body.count} пара</span>
-                                <span>${n.body.was.title}</span>
-                            </div>
-                            <div class="lesson_became">
-                                <span>${n.body.count} пара</span>
-                                <div>
-                                    <span>${n.body.became.title} </span>
-                                    <p class="aud_became">${n.body.became.aud} </p>
+                    if (n.type === 'change') {
+                        notification.innerHTML = `
+                        <div class="notifications__content">
+                            <h3 class="notitfication__title notitfication_type-${n.importance}">${n.title}:</h3>
+                            <div class="notifications_info">
+                                <div class="lesson_was">
+                                    <span>${n.body.count} пара</span>
+                                    <span>${n.body.was.title}</span>
+                                </div>
+                                <div class="lesson_became">
+                                    <span>${n.body.count} пара</span>
+                                    <div>
+                                        <span>${n.body.became.title} </span>
+                                        <p class="aud_became">${n.body.became.aud} </p>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>`;
-                } else if (n.type === 'curator') {
-                    notification.innerHTML = `
-                    <div class="notifications__content">
-                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
-                        <div class="notifications_info">
-                            <p class="notification__content">${n.body.text}</p>
-                        </div>   
-                    </div>`;
-                } else if (n.type === 'teacher') {
-                    notification.innerHTML = `
-                    <div class="notifications__content">
-                        <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
-                        <div class="notifications_info">
-                            <p class="notification__content">${n.body.text}</p>
-                        <div/>
-                    </div>`;
-                }
-    
-                notificationsCont.append(notification);
-            })
-        }else{
-            document.querySelector('.main__title').innerHTML = 'Уведомлений нет'
-            
-            notificationsCont.classList.add('notifications_empty');
-        }
+                        </div>`;
+                    } else if (n.type === 'curator') {
+                        notification.innerHTML = `
+                        <div class="notifications__content">
+                            <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                            <div class="notifications_info">
+                                <p class="notification__content">${n.body.text}</p>
+                            </div>   
+                        </div>`;
+                    } else if (n.type === 'teacher') {
+                        notification.innerHTML = `
+                        <div class="notifications__content">
+                            <h3 class="notitfication__title notitfication_type-${n.importance}">${n.body.sender} сообщает:</h3>
+                            <div class="notifications_info">
+                                <p class="notification__content">${n.body.text}</p>
+                            <div/>
+                        </div>`;
+                    }
         
-        document.querySelector('#app').append(notificationsCont);
-
+                    notificationsCont.append(notification);
+                })
+            }else{
+                document.querySelector('.main__title').innerHTML = 'Уведомлений нет';
+                
+                notificationsCont.classList.add('notifications_empty');
+            }
+            document.querySelector('#app').append(notificationsCont);
+        })       
     })
     
     // настройки
@@ -686,27 +780,40 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         settingsCont.innerHTML = `
         <div class="settings__content">
-        <form name="groupe" class="groupes__forms-cont" onsubmit="return false;">
+        <form name="group" class="groupes__forms-cont" onsubmit="return false;">
             <label class="groupes__form-title" for="form">Введите новую группу</label>
             <div class="btn-form">
-                <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.groupe}"></input>
-                <button class="submit">Сменить</button>
+                <input class="form" name="form" type="text" placeholder="Текущая группа: ${localStorage.group}"></input>
+                <button class="submit">Выйти</button>
             </div>
         </form>
         </div>`;
         document.querySelector('#app').append(settingsCont)
 
+        let form = document.forms.group.form;
+
         document.querySelector('.submit').onclick = () => {
 
-            let groupeIs = false;
-            for (groupeName of groupes) {
-                if (document.forms.groupe.form.value.toUpperCase() == groupeName) groupeIs = true;
+            if(!form.value){
+                delete localStorage.group;
+                window.location.reload();
+                return
             }
 
-            if (groupeIs) {
-                let currentGroupeName = document.forms.groupe.form.value.toUpperCase();
+            let groupIs = false;
+            if(!(form.value == localStorage.group)){
+                for (groupName of groupes) {
+                    if (form.value.toUpperCase() == groupName){
+                        groupIs = true;
+                        break
+                    } 
+                }
+            }
 
-                localStorage.groupe = currentGroupeName;
+            if (groupIs) {
+                let currentGroupName = form.value.toUpperCase();
+
+                localStorage.group = currentGroupName;
                 window.location.reload();
             }
             else {
@@ -717,9 +824,23 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
 
+        form.oninput = () => {
+            if(form.value){
+                document.querySelector('.submit').innerText = 'Сменить';
+            }else{
+                document.querySelector('.submit').innerText = 'Выйти';
+            }
+        }
+
+        form.onfocus = () => {
+            setTimeout(() => {document.querySelector('.navbar').style.visibility = 'hidden'}, 100);
+        }
+        form.onblur = () => {
+            setTimeout(() => {document.querySelector('.navbar').style.visibility = 'visible'}, 100);
+        }
+
     })
 
-    
     // определяем высоту приложение на весь доступный экран
     document.body.style.height = `${window.innerHeight - 1}px`;
     document.querySelector('#app').style.height = `${document.body.offsetHeight - document.querySelector('.navbar').offsetHeight - document.querySelector('.main__title').offsetHeight}px`;

@@ -5,3 +5,9 @@ node_modules/.bin/uuid
 test.js
 Трелло.png
 PWA/.vscode/settings.json
+node_modules/.bin/desktop.ini
+gl keys/desktop.ini
+desktop.ini
+db sourses/desktop.ini
+.vscode/desktop.ini
+*.png

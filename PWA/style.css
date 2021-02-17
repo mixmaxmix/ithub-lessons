@@ -58,6 +58,8 @@ html{
   box-shadow: 0px 22px 44px -12px rgba(49,49,49,0.3);
   border-radius: 20px;
   position: relative;
+  transition: .1s linear;
+  transition-property: opacity;
 }
 .lessons__content {
   width: 100%;
@@ -93,7 +95,7 @@ html{
   position: relative;
   animation: insertLessons var(--duration) ease;
 }
-.lessons__loading{
+.lessons__loading-content{
   width: 100%;
   height: 100%;
   padding-bottom: 60px;
@@ -135,7 +137,6 @@ html{
   -webkit-animation: ptAiguille 12s linear infinite;
       animation: ptAiguille 12s linear infinite;
 }
-
 
 
 
@@ -388,7 +389,7 @@ html{
   flex-direction: column;
   flex-wrap: nowrap;
   width: 90vw;
-  max-height: 80vh;
+  max-height: 70%;
   box-sizing: border-box;
   position: absolute;
   right: var(--pad_aside);
@@ -467,28 +468,41 @@ html{
 }
 .groupes__cont {
   width: 100%;
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  flex-direction: row;
-  flex-wrap: wrap;
-  min-height: 50vh;
-  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr ;
+  grid-gap: 7.5px;
+  height: 50vh;
+  overflow-y: scroll;
   padding-top: 5px;
   box-sizing: border-box;
+  position: relative;
 }
-.groupes__groupe {
+.groupes__gradient{
+  width: 100%;
+  height: 20%;
+  background-image: linear-gradient(transparent, transparent 50%, var(--white-color));
+  background-size: 100% 200%;
+  background-position: bottom;
+  position: absolute;
+  bottom: 0;
+  pointer-events: none;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+.groupes__group {
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: row;
   flex-wrap: nowrap;
-  width: 45px;
-  height: 25px;
-  margin: 5px;
-  border: 1.5px solid var(--main-color);
+  /* width: 50px; */
+  /* height: 35px; */
+  /* margin: 0 7.5px 7.5px 0; */
+  background-color: var(--main-color);
+  color: var(--white-color  );
+  /* border: 1.5px solid var(--main-color); */
   border-radius: 4px;
-  font-size: 0.9em;
+  font-size: 0.8em;
 }
 
 
@@ -604,28 +618,29 @@ html{
   }
 }
 @media (max-width: 380px) {
-  .notitfication__title 
+  .notitfication__title, 
   .lessons__title {
-    font-size: 1.1em;
+    font-size: 1.15em;
   }
 }
 @media (max-width: 360px) {
-  .notitfication__title 
-  .lessons__title {
-    font-size: 1em;
-  }
   body {
-    font-size: 0.95em;
+    font-size: .92em;
+  }
+  .notitfication__title, 
+  .lessons__title {
+    font-size: 1.145em;
+  }
+  .lesson__time-cont{
+    width: 20%;
   }
 }
 @media (max-width: 330px) {
   body {
-    font-size: 0.9em;
+    font-size: 0.85em;
+  }
+  .notitfication__title, 
+  .lessons__title {
+    font-size: 1.1em;
   }
 }
-@media (max-height: 620px) {
-  .groupes__cont {
-    max-height: 40vh;
-  }
-}
-
